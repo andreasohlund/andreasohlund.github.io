@@ -18,8 +18,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>Send only endpoints in <a href="http://www.nservicebus.com/">NServiceBus</a> is, well exactly what you would expect, endpoints that only sends outgoing messages. This type of endpoint is typically used when the only need is sending fire and forget messages to other endpoints. This means that you don’t have to configure and manage an input and error queues like you need with regular send/receive endpoints. A scenario where this is applicable might be web-frontends that only deal with collecting user input, e.g. order details, and sends them off as commands to backend servers for further processing. Just remember that by being send only you can not receive any return values/statuses from your commands.</p>
 <p>To configure your endpoint to be send only just leave out the whole MsmqTransport config section in your app.config.</p>

@@ -16,8 +16,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>>
 <p style="clear: both">In my last post we talked about to importance to keep config file lean by only putting stuff there that is truly relevant for change in production environments. This time we'll look at what to do when the configuration gets corrupted in some way. Ending up with misconfigured application as a scary situation that usually results in the application behaving in some strange way with inconsistency and/or corrupt data as a result. Usually meaning that you a developer gets called in to create hairy sql-script to remedy the situation, not fun... While you should try to design your system to behave well during error conditions there is a couple of important trick we can you to try to minimize the damage of a misconfigured app. </p>

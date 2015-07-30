@@ -18,8 +18,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>The message pipeline in NServiceBus 2.X pretty much consisted of what we called message modules. They served their purpose but didn't quite give you the full control over the message pipeline needed to do more advanced things. Another major shortcoming was that there was no way to hook into the pipeline at the sending/client side of the message conversation. When introducing the DataBus feature of NServiceBus 3.0 we came up with the notion of message mutators to solve a specific requirement to change the content of a message before and after sending it on the wire. The message mutators turned out to be a nice addition to our pipeline both in terms of their ability to change message content but also to serve as more fine grained hooks into the pipeline.</p>
 <p>Lets take a look at how to use them!</p>

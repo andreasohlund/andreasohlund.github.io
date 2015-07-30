@@ -21,8 +21,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>Edit: If you’re on the trunk version of NServiceBus there is a better way to manage the session using the <a href="http://andreasohlund.blogspot.com/2010/10/support-for-child-containers-in.html">child container feature</a>.</p>
 <p style="clear: both;">This post explains how to manage the NHibernate session when using NServiceBus. In NServiceBus each message becomes a unit of work so the recommendation is to use a new session for each message that gets processed. NServiceBus wraps the handling of each message in a TransactionScope. This scope becomes the unit of work and guarantees consistency between the data store and the underlying queuing technology. Note that this requires the endpoint to be configured as "transactional", the default in NServiceBus.</p>

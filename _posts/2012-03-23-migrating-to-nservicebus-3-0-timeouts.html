@@ -18,8 +18,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>In this post I'll go through the different options you have when it comes to migrating your 2.6 Timeouts to the new 3.0 format. For those of you that aren't familiar with the NServiceBus timeouts the short explanation is that NServiceBus supports durable timeouts that survives process  restarts. In order to do that we need to store the timeouts on disk. In 2.6 the default storage was a MSMQ queue but in 3.0 it's RavenDB and this is why you <span style="text-decoration: underline;">might</span> need to migrate. I say might because the actual timeout messages that gets sent over the wire is compatible between 2.6 and 3.0.1</p>
 <p><strong>Note</strong>: The reason that you need to be on <a href="http://nservicebus.com/Downloads.aspx">NServiceBus 3.0.1</a> for this to work is that there was a bug in 3.0.0 that made the timeout incompatible. This is now fixed in 3.0.1</p>

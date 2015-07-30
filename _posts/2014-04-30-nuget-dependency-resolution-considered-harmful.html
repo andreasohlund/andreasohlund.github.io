@@ -16,6 +16,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
+
 ---
 <p>First let me tell you that I like NuGet, it's awesome to get a decent package manager for .Net and the team has done a great job getting NuGet into its current state. That said there is still room for improvements and the way NuGet resolves dependencies is one of them.</p>
 <p>The problem here is that NuGet by default finds the oldest version of package dependency that falls within the range you have specified. So if you have dependencies that follow <a href="http://semver.org/">SemVer</a>, meaning that everything within the same major number is compatible, this would lead you to specify the following dependency  range:</p>

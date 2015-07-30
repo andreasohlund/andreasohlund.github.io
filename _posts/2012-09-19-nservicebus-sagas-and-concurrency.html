@@ -18,8 +18,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>The question on how the NServiceBus sagas handle concurreny came of on <a href="http://stackoverflow.com/questions/12370389/nservicebus-concurrent-access-to-saga-data">stackoverflow</a> and my answer got long winded and turned into a blog post.</p>
 <p>If your endpoints is running with more than 1 worker thread there is the possibility that multiple messages will hit the same saga instance at the exact same time. To give you ACID semantics in this situation NServiceBus will use the underlying storage to produce consistent behavior by only allowing one of the threads to commit. Most of this is handled automatically for you by NServiceBus but there are a few things you need to be aware of.</p>

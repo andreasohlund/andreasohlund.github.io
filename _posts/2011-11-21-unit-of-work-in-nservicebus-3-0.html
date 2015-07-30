@@ -17,8 +17,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>When using a framework like NServiceBus there is usually a need to create your own unit of work in order to avoid having to repeat code over an over again in your message handlers. Examples would be committing NHibernate transactions, calling SaveChanges on the RavenDB session, etc etc. In NServiceBus 2.6 your only hook into the message pipeline was the <a href="http://blog.jonathanoliver.com/2010/04/extending-nservicebus-thread-specific-message-modules/">message modules</a>. This had some quirks since the HandleEndMessage method of the message module will be invoked regardless of the outcome and made it hard to decide if a commit or rollback should be performed. In NServiceBus 3.0 there is a new way to do this, meet the IManageUnitsOfWork interface</p>
 <p><script src="https://gist.github.com/1382212.js"> </script></p>

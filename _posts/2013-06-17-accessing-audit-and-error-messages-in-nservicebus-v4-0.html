@@ -17,8 +17,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>NServiceBus has always supported centralized audit and <a href="http://andreasohlund.net/2010/03/15/errorhandling-in-a-message-oriented-world/">error handling</a> by allowing you to specify centralized queues where successfully and failed messages ends up. NServiceBus will guarantee that each message you send/publish will end up in one of those queues, hopefully the audit queue:). Earlier versions of NServiceBus had some rudimentary support for managing errors but for audit messages it was up to you as a user to make something useful with all that data. This has now changed with the introduction of <a href="http://particular.net/ServiceInsight">ServiceInsight</a>.</p>
 <p>ServiceInsight gives you a graphical view of your messages flows, insight into why a given message has failed and also a way to issue retries for those messages. Since queues are not really that great for longtime storage of data we needed a way to process all those message in order to make it easier to query and manipulate them from the UI. We also decided to not limit access to just our own tools but instead make all data and operations on it available to you via a REST'ish api.</p>

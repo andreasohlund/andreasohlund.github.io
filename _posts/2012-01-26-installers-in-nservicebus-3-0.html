@@ -17,8 +17,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>In 3.0 we introduced the concept of installers to make sure that both infrastructure  and endpoint specific artifact installed and configured automatically for you if needed.</p>
 <p>The installers comes in two flavors, infrastructure installers and regular installers. Infrastructure installers are used for things that are not specific to a given endpoint eg. RavenDB, MSMQ. Regular installers are focused on setting up things that the current endpoint is depending on eg. queues, folders, databases etc. Infrastructure installers are always invoked before regular installers. Although the installers are mainly used internally you could use the for your own purposed as well. Perhaps you need to make sure folders are created, database scripts invoked etc etc.</p>

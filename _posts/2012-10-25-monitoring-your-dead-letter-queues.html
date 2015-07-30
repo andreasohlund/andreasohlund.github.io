@@ -19,8 +19,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>NServiceBus relies heavily on the underlying queuing system to make sure that messages gets delivered in a robust and timely fashion. In order to spot miss configurations it's very important to monitor the dead letter queues (DLQ's). You can think of the dead letter queue as a dumping ground for messages that can't be delivered by the queuing system. This post focus on MSMQ but the general ideas apply to the other queuing systems as well.</p>
 <h2>Can all messages end up in the DLQ?</h2>

@@ -19,8 +19,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>Sagas often plays the role of coordinator, especially when used in integration scenarios. In essence this mean that the saga decides what to do next and then asks some one else to do it. This allows you to keep your sagas free from interacting with no transactional things like file systems, rest services, etc. The type of communication pattern best suited best for these type of interactions is the <a href="http://www.eaipatterns.com/RequestReply.html">request/response</a> pattern since there is really only one party interested in the response and that is the saga itself. A typical scenario would be a saga controlling the process of billing a customer through visa or mastercard. In this case you would probably have separate endpoints for making the webservice/rest-calls to each payment provider and a saga coordinating retries and fallback rules. Each payment request would be a separate saga instance so how would we know which instance to hydrate and invoke when the response comes back?</p>
 <p>The usual way to do this is to correlate on some kind of if and let the user tell us how to find the correct saga instance using that Id. While this is easily done we decided that this was common enough to warrant native support in NServiceBus for these type of interactions.</p>

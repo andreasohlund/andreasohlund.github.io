@@ -20,8 +20,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>NServiceBus keeps a static pool of threads that process incoming messages. This means that threads are not recreated for each new message with the effect that thread static variables are not cleared.</p>
 <div>If you use the thread static cache lifecycle of [Name of your favorite container here] this will have the effect that the objects placed in this cache will not be recreated for each new message as you might expect. The thread static cache is a great way to store objects that should be shared for the duration of each request. One example would be to share the NHibernate session as I have <a href="http://andreasohlund.blogspot.com/2010/02/nhibernate-session-management-in.html">talked about earlier. </a></p>

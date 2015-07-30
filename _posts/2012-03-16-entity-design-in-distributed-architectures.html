@@ -17,8 +17,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>In my<a href="http://andreasohlund.net/2012/02/21/talk-putting-your-events-on-a-diet/"> talk about event design in service oriented architectures</a> I dicussed how you should try to design your events so that they would only carry Id's across service boundaries. Instead you would use use commands, which always are internal to a service, to store what ever data you need for each particular service and use the event to synchronize status changes across services. In essence this means that the only thing that is shared between services is the <strong><span style="text-decoration: underline;">ID</span></strong>. This obviously also relates to how you design you entities. I'm not going into details here because Ayende has posted two excellent post on this subject. So please head over to his blog and read them:</p>
 <p><a href="http://ayende.com/blog/153703/there-ainrsquo-t-no-such-thing-the-definitive-entity-definition">http://ayende.com/blog/153703/there-ainrsquo-t-no-such-thing-the-definitive-entity-definition</a></p>

@@ -21,8 +21,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>The NServiceBus trunk now has support for child|nested containers, thanks to <a href="http://jonathan-oliver.blogspot.com/">Jonathan Oliver</a> for supplying the patch. Be aware that child containers are not supported by spring.net so if you plan to take advantage of this you’d have to use one of the other containers supported by NServiceBus. Child containers is essentially a snapshot of the main container where transient instances is treated as singleton within the scope of the child container. This is useful when you’d want to scope instances for the duration of a web request or the handling of a message in NServiceBus. While this was possible before, child containers brings one more important feature to the table.</p>
 <p><strong>Deterministic disposal</strong></p>

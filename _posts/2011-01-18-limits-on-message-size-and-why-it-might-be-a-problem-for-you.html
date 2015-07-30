@@ -22,8 +22,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p><a href="http://lh3.ggpht.com/_fqHEujhanB4/TTWXBVvY0iI/AAAAAAAAAEw/-MbgAq99pTc/s1600-h/size_matters%5B3%5D.jpg"><img style="display: inline; margin-left: 0px; margin-right: 0px; border-width: 0px;" title="size_matters" src="assets/size_matters_thumb%5B1%5D.jpg?imgmax=800" border="0" alt="size_matters" width="244" height="210" align="right" /></a>Message queuing technologies  always have an upper limit set for the message size they are able to transport. The size limit is usually related to some constraint imposed by the underlying technologies used to implement the queuing system. Usually this is not a problem since the limit for the common enterprise messaging systems are quite large. MSMQ for example has a limit on 4 MB and that should be more than enough for the common use case. With the introduction of cloud bases queues this limit has increased due to the challenges that comes with cloud based infrastructure, scalability, geographic distribution, replication across data centers etc etc. The limits for Azure Queues is officially 8KB(6144 bytes in practice - <a title="http://bit.ly/bSjPfK" href="http://bit.ly/bSjPfK">http://bit.ly/bSjPfK</a>), 64 KB for .net service bus queues and Amazon SQS is also to 8KB. With these lower limits the maximum message size is something that is more likely to cause problems for you as an application developer.</p>
 <h3>Some scenarios that may result in large messages</h3>

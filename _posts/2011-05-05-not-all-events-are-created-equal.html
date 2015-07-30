@@ -21,8 +21,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p><img class="alignright" src="assets/declaration-of-independence.jpg" alt="" width="280" height="210" />No, this post has nothing to do with the <a href="http://en.wikipedia.org/wiki/All_men_are_created_equal" target="_blank">declaration of independence</a> but perhaps that we need to design our events with a little more independence in mind.</p>
 <p>Events denotes important things that has occurred in our business. These events are useful for things like keeping persistent view models updated in a CQRS architecture and as way to communicate between our SOA services, I would go as far so say that events should be the only way that services should interact with each other. The questions is should we use the same event for both of the above situations?  Keeping SRP in mind tells us that this might be a bad idea.</p>

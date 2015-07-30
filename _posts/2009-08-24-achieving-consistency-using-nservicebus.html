@@ -19,8 +19,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>Inconsistency problems in your application often occur when you are using technologies that are non transactional. Sending emails using SMTP is one example where there is no “rollback” in case something goes wrong. I want to talk about how asynchronous messaging in general and <a href="http://nservicebus.com/">NServiceBus</a> in specific can help you solve your inconsistency problems with minimal effort.</p>
 <p>Let examine a common situation where a user has signed up for some service that you provide and you need to create the account and send a confirmation email to the user. The code would look something along these lines:</p>

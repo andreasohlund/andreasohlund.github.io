@@ -18,8 +18,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>NServiceBus supports two different types of retries, first level retries (FLR) that happens immediately by bouncing the message back to the<span style="text-decoration: underline;"> top of the input queue</span> and <a href="http://nservicebus.com/SecondLevelRetries.aspx">Second Level Retries (SLR)</a> that happens after a configurable amount of time.</p>
 <p>In short the FLR aims to solve any transient exceptions like deadlocks while SLR solves more semi-transient ones like the database being down. Usually this all this works out of the box without you doing any thing but in some scenarios you might want to skip the SLR for exceptions where you know that that there is no chance of success.</p>

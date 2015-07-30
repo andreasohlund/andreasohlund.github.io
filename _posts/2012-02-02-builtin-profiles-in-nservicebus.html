@@ -18,8 +18,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>Profiles where introduced in NServiceBus 2.X so this is nothing that is new in 3.0. I've<a href="http://andreasohlund.net/2009/09/04/building-lifecycle-aware-applications/"> blogged about them</a> a while ago but in short they are ways for you to alter the behavior of your endpoint without recompiling your code. This will help you tailor your endpoints for different environments but also controlling things like scaling out.  Profiles are only available if you use the NServiceBus host so this is not applicable if you self host NServiceBus inside a website, wcf service, smart client, excel:) whatever.</p>
 <p>Profiles can be divided into 2 main categories depending on what they control. Those categories are <em>Environment</em> and <em>Feature</em>. Environment profiles can often use <em>Feature</em> profiles to turn things on and off depending on the environment. Technically there is no difference between the two types.</p>

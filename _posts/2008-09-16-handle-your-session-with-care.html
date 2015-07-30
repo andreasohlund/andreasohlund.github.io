@@ -18,8 +18,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>>
 <p>Recently I was working on a piece of code that would batch items from a stage area into our application. Everything worked ok but when we tested the solution with lots of data the performance was not what we had hoped for. After running a profile using <a href="http://www.jetbrains.com/profiler/">dotTrace</a> a got a bit puzzled to see that reason for our poor performance was the dirty tracking performed by the NHibernate session. As it turned out it was my own stupid way of handling the session that caused the problem.</p>

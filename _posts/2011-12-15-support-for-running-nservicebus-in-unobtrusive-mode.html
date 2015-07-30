@@ -17,8 +17,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>When using NServiceBus you define your message contracts using plain C# classes or interfaces. So far so good. In order for NServiceBus to find those classes when scanning your assemblies you need to mark them with the special <em>IMessage </em>interface. This essentially tells us that "hey this is a message definition, please use it". This might seem like a small thing but now you're coupling your message contracts to a NServiceBus assembly since you need to reference the NServiceBus.dll in order get access to the interface. This dependency can cause problems if you have different services that run different versions of NServiceBus. I'm not going into the details since Jonathan Oliver has a <a href="http://blog.jonathanoliver.com/2010/09/nservicebus-distributing-event-schemacontract/">great write up on this very subject</a>.</p>
 <p>This is not a big deal for commands because they are always used with in the boundary of a single service and it's fair to require a service to use the same version of NServiceBus. But when it comes to events this becomes more of a problem since requiring all of your services to use the same version of NServiceBus and there by forcing them to upgrade NServiceBus all at once is not an ideal thing.</p>

@@ -17,8 +17,7 @@ author:
   display_name: Andreas Öhlund
   first_name: Andreas
   last_name: "Öhlund"
-excerpt: !ruby/object:Hpricot::Doc
-  options: {}
+
 ---
 <p>In the latest release of<a href="http://nservicebus.com/NServiceBusV3NewFeatures.aspx"> NServiceBus (3.2)</a> we have introduced the concept of Second Level Retries (SLR). We've always had retries in NServiceBus but those retries  where aimed at transient errors like deadlocks and therefor performed instantly. Other more transient errors where just forwarded to a central error queue where they would be <a href="http://andreasohlund.net/2010/03/15/errorhandling-in-a-message-oriented-world/">managed by the team maintaining the application</a>. The SLR aims to solve the type of errors that can be classified as semi-transient. Examples would be a database being down for short period of time, a web-service being down for a few seconds etc. In previous versions of NServiceBus those errors would have been moved to the error queue but with SLR there is reasonably good chance that they will be retried successfully and there by not burdening the maintenance team.</p>
 <h3>Use with care</h3>
