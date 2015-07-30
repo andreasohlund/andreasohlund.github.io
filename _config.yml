@@ -1,11 +1,12 @@
 # Site settings
-title: My thoughts on software development
+title: Andreas Öhlund
 email: andreas.ohlund@particular.net
-description: > # Random rambling on stuff I come across as a Software Developer
+description: > # My thoughts on Software Development
 baseurl: "" # the subpath of your site, e.g. /blog/
 url: "http://andreasohlund.net" # the base hostname & protocol for your site
 twitter_username: andreasohlund
 github_username:  andreasohlund
+permalink:    /:year/:month/:day/:title/
 
 # Build settings
 markdown: kramdown
