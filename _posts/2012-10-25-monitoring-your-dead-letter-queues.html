@@ -1,0 +1,41 @@
+---
+layout: post
+title: Monitoring your dead letter queues
+date: 2012-10-25 14:52:30.000000000 +02:00
+categories:
+- Messaging
+- NServiceBus
+- Ops
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '899852358'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>NServiceBus relies heavily on the underlying queuing system to make sure that messages gets delivered in a robust and timely fashion. In order to spot miss configurations it's very important to monitor the dead letter queues (DLQ's). You can think of the dead letter queue as a dumping ground for messages that can't be delivered by the queuing system. This post focus on MSMQ but the general ideas apply to the other queuing systems as well.</p>
+<h2>Can all messages end up in the DLQ?</h2>
+<p>If your using NServiceBus this would be all messages since we make sure to set the required flags that tells MSMQ to enable the DLQ (negative source journaling in msmq lingo). This means there is no way you can loose valuable business data even if the queuing system is miss configured. More info on the dead letter queues in MSMQ can be found <a href="http://msdn.microsoft.com/en-us/library/windows/desktop/ms706227(v=vs.85).aspx">here</a>.</p>
+<h2>When do they end up there?</h2>
+<p>Messages gets moved to  the DLQ when the queuing system has tried to deliver a message for a while but decides to give up. This time is usually configurable and in MSMQ this happens when either <em>time-to-reach-queue(TTRQ)</em>  or <em>time-to-be-received(TTBR) </em>for the message has expired.</p>
+<p>The TTRQ is usually 4 days by <a href="http://msdn.microsoft.com/en-us/library/windows/desktop/ms711440(v=vs.85).aspx">default</a> but can be adjusted per machine. TTBR is also <a href="http://blogs.msdn.com/b/johnbreakwell/archive/2010/01/22/why-does-msmq-keep-losing-my-messages.aspx">4 days by default</a> but can be controlled on a message per message basis by adding the <a href="http://stackoverflow.com/questions/2855900/nservicebus-setting-time-to-be-received">[TimeToBeReceived] attribute</a> to your NServiceBus message definitions.</p>
+<h2>So how do I monitor this?</h2>
+<p>While the error queue in NServiceBus is usually system wide the DLQ's are machine specific. This means that you have to monitor all your machines to detect messages ending up in any of the DLQ's. There are many ways to do this, write a powershell script that periodically looks at the DLQ(s) , MSMQ has 2 different ones,  and sound the alarm. To do this just use the <a href="http://msdn.microsoft.com/en-us/library/system.messaging.messagequeue.aspx">System.Messaging.MessageQueue</a> class in your script. The address is:</p>
+<pre>DIRECT=OS:{your machine}\SYSTEM$;DEADLETTER 
+DIRECT=OS:{your machine}\SYSTEM$;DEADXACT</pre>
+<p>Another option is to use your favorite monitoring tool and watch the "Msmq Queue -&gt; Computer Queues -&gt;Messages in Queue " performance counter.</p>
+<p>The image below shows this on my machine.</p>
+<p><a href="http://andreasohlund.net/wp-content/uploads/2012/10/DeadLetterMonitoring.png"><img class="size-full wp-image-507 alignnone" title="DeadLetterMonitoring" src="assets/DeadLetterMonitoring.png" alt="" width="631" height="422" /></a></p>
+<p>Note that the "Messages in queue" counter gives you the number of messages in both the DLQ's.</p>
+<h2>TL;DR;</h2>
+<p>Make sure to monitor your DLQ's to detect message queuing issues!</p>
+<p>Hope this helps!</p>

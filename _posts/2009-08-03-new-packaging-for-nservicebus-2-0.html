@@ -1,0 +1,36 @@
+---
+layout: post
+title: ">New packaging for NServiceBus 2.0"
+date: 2009-08-03 23:21:00.000000000 +02:00
+categories:
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '299892679'
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2009/08/new-packaging-for-nservicebus-20.html"
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>>
+<p>&#160;</p>
+<p>The packaging of NServiceBus 2.0 has been slightly changes compared to 1.9 The reason for this is that the merged NServiceBus.dll started to get to big. While we still strive to keep the number of assemblies down we decided that a split was necessary.</p>
+<p>NServiceBus 2.0 will ship the following assemblies:</p>
+<p><strong>NServiceBus.dll</strong></p>
+<p>Contains only the interfaces and classes that enables you to implement your business logic. This means message handlers sagas, classes with a dependency to the IBus interface etc. This is essentially a lightweight assembly containing the public Api of NServiceBus</p>
+<p><strong>NServiceBus.Core.dll</strong></p>
+<p>This assembly contains all the core parts of NServiceBus, transports, subscriptions storages, serializes, etc. Any projects that hosts NServiceBus endpoints needs to reference this assembly. NServiceBus and NServiceBus.Core are the only mandatory assemblies so if you are providing your own hosting solution these are the only things you have to reference. (most likely if you are hosting NServiceBus within a asp.net web application)</p>
+<p><strong>NServiceBus.Host.exe</strong></p>
+<p>NServiceBus 2.0 comes with a new generic host that will take care of hosting your business logic in a flexible way. (Based on <a href="http://code.google.com/p/topshelf/">topshelf</a>). Justin Ramel has great <a href="http://justinram.wordpress.com/2009/08/03/how-the-new-host-feature-works-in-nservicebus/">post</a> on how to use the host</p>
+<p><strong>Additional Containers</strong></p>
+<p>2.0 will ship with Spring.Net as the default container. If you prefer to use one of the other supported containers, AutoFac, StructureMap, Windsor and Unity you have to reference the NServiceBus.ObjectBuilder.[Name of Container].dll that ships with NServiceBus. We also supply the versions of the actual containers that NServiceBus is compiled against. If you prefer you own version just reference the specific version and assembly redirect accordingly.</p>
+<p>The current trunk contains the above packaging and should hopefully be quite stable as we are closing in on the release of NServiceBus 2.0.</p>

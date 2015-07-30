@@ -1,0 +1,30 @@
+---
+layout: post
+title: Sending emails using NServiceBus
+date: 2012-06-07 12:13:39.000000000 +02:00
+categories:
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '716828265'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>Sending emails is a problem re-solved by developers every day. Not that it's hard but as we all know connecting to smtp servers is known to not work super reliable at all times. To help out we created a <a href="https://github.com/NServiceBus/NServiceBus/blob/develop/src/satellites/NServiceBus.Satellites/ISatellite.cs">NServiceBus satellite</a> that gives you the benefits of the retries that comes with NServiceBus to make your email sending more robust.</p>
+<p>The reason we wen't for a satellite is that we can give you the robustness of a separate queue without requiring you to setup a new Endpoint or configure any message mappings.</p>
+<p>This way every endpoint will have this capability builtin and the only config needed is the <a href="https://github.com/NServiceBus/NServiceBus/blob/develop/Samples/Notifications/NotifySample/App.config#L8">SmtpClient config section</a></p>
+<p>The API for this new feature is <a href="https://github.com/NServiceBus/NServiceBus/blob/develop/src/Notifications/NServiceBus.Notifications/BusExtensions.cs#L10">Bus.SendEmail(new MailMessage)</a>, we're using the System.Net.Mail.MailMessage as this is a proven abstraction for sending emails.</p>
+<p>This entire feature was developed at the <a href="http://ndcoslo.oktaset.com/t-7921">NDC2012 NServiceBus hackathon</a> with the help of the audience so I would like to thank all the ones that showed up and helped us!</p>
+<p><a href="https://github.com/NServiceBus/NServiceBus/tree/develop/src/Notifications">The code</a> is currently on our develop branch and it will be included in our next major release.</p>
+<p>A sample demonstrating all this can be found <a href="https://github.com/NServiceBus/NServiceBus/commit/0bb5516484a50b2629548605dd639736beca4e96">here</a>.</p>
+<p>Happy spamming!</p>

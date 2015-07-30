@@ -1,0 +1,40 @@
+---
+layout: post
+title: Event based interop with Service Broker
+date: 2010-09-03 09:28:00.000000000 +02:00
+categories:
+- Interop
+- NServiceBus
+- Sql Server Service Broker
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '299892762'
+  blogger_blog: andreasohlund.blogspot.com
+  _edit_last: '1'
+  blogger_permalink: "/2010/09/event-based-interop-with-service-broker.html"
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>When integrating with legacy databases you’re often required detect changes by polling. This method have some quirks that can be problematic at times. The first issue is that you need to figure out when rows has been inserted or updated. If your legacy db has timestamp columns for inserts and updates this is quite straight forward, just remember when the time you lasts checked for changes and get all changes that has occurred since then. If no such columns exists you’re in trouble and the pain of writing manual code for keeping track of all that awaits you. The other problem is that it’s hard to figure out which fields that was updated. This might not be a big issue but if you need to make decisions based on that info you need maintain a copy of the data in order to figure out what has changed. This is almost always the case if you want to move a way from CRUD style events like CustomerUpdated and the likes to a more business aligned model with events like CustomerActived, CustomerMoved etc etc.</p>
+<p>We faced all the problems above and decided to tackle the problem from another angle. As a nice coincidence I had noticed the <a href="http://blog.cridion.com/">Joseph Daigle</a> had created a <a href="http://github.com/jdaigle/servicebroker.net">ITransport implementation</a> for NServiceBus that work with SQL Server Service Broker (SSSB). I had to <a href="http://github.com/jdaigle/servicebroker.net/commit/418ee0720962d2ea07830c3f34c84f84cef22d22">patch the transport</a>, to support xml serialization in order to be able to send messages direct from within SQL Server. With this in place we could add triggers to the relevant tables to add messages to the SSSB queue.</p>
+<p>We added the following stored procedure to help with creating xml in the correct format for the NServiceBus xml parser and finally submitting the message to the queue.</p>
+<p><script src="http://gist.github.com/563557.js?file=SendNServiceBusMessage.sql"></script></p>
+<p>For instructions on how to setup SSSB and create the necessary Services and queues please read more <a href="http://github.com/jdaigle/servicebroker.net/blob/master/README.md">here</a>.</p>
+<h3>Receiving messages from SSSB</h3>
+<p>The next step was to enable our regular NServiceBus endpoint to receive messages from SSSB. Our main transport is Msmq so we have to start up the SSSB Transport and forwards all incoming messages to our regular transport using SendLocal. This is easily done by implementing IWantToRunAtStartup causing the NServicebus Host to kick off a separate thread to handle this. Next we subscribe to the TransportMessageReceived event and send the incoming messages to our Msmq transport for regular message processing. This combined with the fact that SSSB supports distributed transactions gives us a nice and robust bridge between SSSB and Msmq.</p>
+<p>The code is displayed below.</p>
+<p><script src="http://gist.github.com/563553.js?file=Forwarder.cs"></script></p>
+<p>The image below outlines the moving parts of this solution</p>
+<p><a href="http://lh6.ggpht.com/_fqHEujhanB4/TICxpknDHQI/AAAAAAAAAEU/H6xg9momyMM/s1600-h/Sqlbroker%5B4%5D.jpg"><img style="display: inline; border: 0px;" title="Sqlbroker" src="assets/Sqlbroker_thumb%5B2%5D.jpg?imgmax=800" border="0" alt="Sqlbroker" width="569" height="260" /></a></p>
+<h3>In closing</h3>
+<p>This is an example of using the SSSB transport to do event based interop with SQL Server. You can of course use the transport for pure SSSB backed solutions where you use SSSB queues as your main transport for messages between your regular NServiceBus endpoint. This removes the dependency on MSMQ but will make your SQL Server a single point of failure and a potential bottleneck.</p>
+<p>Pick your poison!</p>

@@ -1,0 +1,53 @@
+---
+layout: post
+title: Convention over configuration in NServiceBus 3.0
+date: 2012-01-27 13:15:48.000000000 +01:00
+categories:
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '554484223'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>One of the key goals for NServiceBus 3.0 is to remove much of the need for configuration and there by improve the out of the box experience. In order to achieve this we have introduced the concept of a <strong><em>EndpointName</em></strong> that will be used to control our naming conventions.</p>
+<p>The endpoint name is the name of a <span style="text-decoration: underline;">individual endpoint</span> and must be unique across your solution. The only exception to this rule is when you are scaling out using the master node concept where the same logical endpoint would reside on many physical servers, more on that in a upcoming post.</p>
+<h3>Conventions that use the endpoint name</h3>
+<p>The following conventions use the endpoint name to configure various parts of NServiceBus. Note that the {masternode} will be localhost if not specified.</p>
+<ul>
+<li><strong>Local address - </strong>The local address (input queue) of your endpoint will be the {endpointname}</li>
+<li><strong>Subscriptions - </strong>If you use the Msmq subscription storage the name of the queue used to store the subscribers will be {endpointname}.subscriptions</li>
+<li><strong>Raven database name</strong> - The database name when storing data related to the endpoint will be {endpointname}</li>
+<li><strong>Timeout manager address </strong>- The address of the timeout manager will be {endpointname}.timeouts@{masternode}</li>
+<li><strong>Gateway input address </strong>- The address where the gateway will pickup outgoing messages will be {endpointname}.Gateway@{masternode}</li>
+<li><strong>Gateway url </strong>- If you use the http/https channel the url that the gateway will listen to is defaulted to http(s)://localhost/{endpointname}</li>
+<li><strong>Distributor input queue - </strong>The input queue of the distributor will be {endpointname}@{masternode}</li>
+<li><strong>Distributor control queue - </strong>The control queue of the distributor will be {endpointname}.distributor.control@{masternode}</li>
+<li><strong>Distributor storage queue - </strong>The local storage queue of the distributor will be {endpointname}.distributor.storage</li>
+</ul>
+<h3>How to specify the endpoint name</h3>
+<p>There are multiple ways that you can define the endpoint name. Lets look at them one by one.</p>
+<ul>
+<li>If not specified by the user the namespace of the class implementing IConfigureThisEndpoint will be used as the endpoint name when running the NServiceBus host. If your project is called MyServer and the config is in the root this will result in the endpoint name "MyServer". This is the recommended way to name a endpoint.</li>
+<li>If not specified by the user when custom hosting NServiceBus the namespace of the class calling NServiceBus.Configure.With() will be used. For websites this will likely be the namespace of your global.asax.cs</li>
+<li>You can set the endpoint name using the [EndpointName] attribute on your endpoint configuration.</li>
+<li>You can implement the <a href="https://github.com/NServiceBus/NServiceBus/blob/master/src/hosting/NServiceBus.Hosting/Configuration/INameThisEndpoint.cs">INameThisEndpoint</a> interface on your endpoint config</li>
+<li>If you specify a explicit service name when installing the NServiceBus host this will be used as endpoint name: /serviceName:""MyEndpoint"</li>
+<li>You can specify a endpoint name when running the NServiceBus host: /endpointName:""MyEndpoint"</li>
+</ul>
+<div>As you can see there is lots of ways to do this. But if all the above is not enough you can define your own convention using:</div>
+<div><em>Configure.DefineEndpointName(()=&gt;{....})</em></div>
+<h3>Upgrading from NServiceBus 2.6</h3>
+<p>Users upgrading from 2.6 need to name their endpoint to the same name as their current input queue since there is no way to explicitly set the input queue in NServiceBus 3.0</p>
+<h3>In closing</h3>
+<p>Naming your endpoint will be a very important thing going forward and the framework will try to push you in that direction by not making it to easy for you to override. This will hope fully help us further improve our "convention over configuration" support make it even easier for you to build, deploy and run NServiceBus in the future.</p>

@@ -1,0 +1,25 @@
+---
+layout: post
+title: Timeoutmanager - Future messages
+date: 2011-11-25 16:13:58.000000000 +01:00
+categories: []
+tags: []
+status: draft
+type: post
+published: false
+meta:
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<div>public void When(AccountCreated e)</div>
+<div>{</div>
+<div>_endpoint.SendToService(new SendVerificationEmail(e.AccountId, e.AccoundInfo));</div>
+<div>_endpoint.SendToAccount(DateTime.UtcNow + 7.Days(), DeleteAccountWithNonverifiedEmail(e.AccountId));</div>
+<div>}</div>

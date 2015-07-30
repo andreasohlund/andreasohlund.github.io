@@ -1,0 +1,58 @@
+---
+layout: post
+title: Builtin profiles in NServiceBus
+date: 2012-02-02 08:00:16.000000000 +01:00
+categories:
+- Basics
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '561249492'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>Profiles where introduced in NServiceBus 2.X so this is nothing that is new in 3.0. I've<a href="http://andreasohlund.net/2009/09/04/building-lifecycle-aware-applications/"> blogged about them</a> a while ago but in short they are ways for you to alter the behavior of your endpoint without recompiling your code. This will help you tailor your endpoints for different environments but also controlling things like scaling out.  Profiles are only available if you use the NServiceBus host so this is not applicable if you self host NServiceBus inside a website, wcf service, smart client, excel:) whatever.</p>
+<p>Profiles can be divided into 2 main categories depending on what they control. Those categories are <em>Environment</em> and <em>Feature</em>. Environment profiles can often use <em>Feature</em> profiles to turn things on and off depending on the environment. Technically there is no difference between the two types.</p>
+<h3>Environment related profiles</h3>
+<p>NServiceBus comes with 3 builtin profiles who's main goal is to adjust the behavioral of the host depending on the environment where the endpoint is running. You can of course create your own profiles, more on that later. The 3 environmental profiles are:</p>
+<ul>
+<li><strong>Lite</strong> - This is the default profile that is used if no explicit profile is defined. This profile is suitable for running on your development machine possible inside visual studio. This profile configures all the persistence like sagas, subscriptions, timeouts etc to be InMemory which is easy setup but probably not what you want for production. Lite also turns the TimeoutManager and Gateway on be default. <a href="http://andreasohlund.net/2012/01/26/installers-in-nservicebus-3-0/">Installers </a>are always invoked when running the lite profile. Logging is done to the console.</li>
+<li><strong>Integration</strong> - The integration profile is suitable for running your endpoint in an integration/q&amp;a environment. Storage is now persistent using queues or RavenDB, features like TimeoutManager and Gateway is now turned off be default. Installers are still being invoked to make deployment easier to automate. Logging is still being output to the console by default.</li>
+<li><strong>Production</strong> - This profile sets your endpoint up for production use. This means that all storage is durable and suitable for scale out. Installers are not invoked since your endpoint will probably be installed as a windows service and not running with elevated priviliges. <a href="http://andreasohlund.net/2012/01/26/installers-in-nservicebus-3-0/">Installers are only run when you install the host</a>. Logging is done to a logfile in the runtime directory since again you're most likely running as a windows service.</li>
+</ul>
+<h3>Feature related profiles</h3>
+<p>The feature related profiles that comes out of the box are:</p>
+<ul>
+<li><strong>MultiSite</strong> - Turns the the gateway on</li>
+<li><strong>Time</strong> - Turns the timeout manger on</li>
+<li><strong>Master  </strong>- Makes the endpoint a "master node endpoint", can't be combined with the Worker or Distributor profile</li>
+<li><strong>Worker</strong> - Makes the current endpoint enlist as a worker with its distributor running on the master node. Can't be combined with the Master or Distributor profile.</li>
+<li><strong>Distributor</strong> - Not implemented yet but this will start the endpoint as a distributor only. This means that the endpoint won't do any actual work and only distribute the load among its workers. Can't be combined with the Master and Worker profiles.</li>
+<li><strong>PerformanceCounters</strong> - Turns the NServiceBus specific performance counters on</li>
+</ul>
+<div>Profiles are just plain C# interfaces so you can mix and match the built in Feature profiles to your liking.</div>
+<h3>Telling the host which profiles to run</h3>
+<p>To activate a specific profile just pass the full name of the profile on the commandline when starting the host. Type names are case insensitive. Profiles can be combine by separating them with a white space. So if you want your endpoint to run in the <em>Integration</em> and <em>Master</em> profiles you would use:</p>
+<p>.\<em>NServiceBus.Host.exe</em> <strong>nservicebus.integration nservicebus.master</strong></p>
+<p>When you install the host as a windows service the profiles used when installing will be persisted and used every time the host starts. So if you want to install your host with the <em>Production</em> and the <em>MultiSite</em> profiles you would use:</p>
+<p>.\<em>NServiceBus.Host.exe /install</em> <strong>nservicebus.production nservicebus.multisite</strong></p>
+<p>&nbsp;</p>
+<h3>Defining your own profiles</h3>
+<p>To define your own profiles you need to take the following steps:</p>
+<ol>
+<li>Create a profile by creating a class that inherits from <a href="https://github.com/NServiceBus/NServiceBus/blob/master/src/hosting/NServiceBus.Hosting/Profiles/IProfile.cs">IProfile</a></li>
+<li>Create 1 or many profile handlers for your new profile by implementing <a href="https://github.com/NServiceBus/NServiceBus/blob/master/src/hosting/NServiceBus.Hosting/Profiles/IHandleProfile.cs">IHandleProfile&lt;T&gt;</a></li>
+<li>Activate the profile when starting the host by specifying the type name of your newly created profile on the commandline.</li>
+</ol>
+<div>Note that you can create profile handlers for the builtin profiles as well if you want to do additional things when they are activated.</div>
+<div>That's it, profiles are very powerful and can help you vary your endpoint behavior in and easy way!</div>

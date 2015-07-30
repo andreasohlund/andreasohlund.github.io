@@ -1,0 +1,82 @@
+---
+layout: post
+title: ">NServiceBus support for StructureMap"
+date: 2009-05-14 22:01:00.000000000 +02:00
+categories:
+- NServiceBus
+- StructureMap
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2009/05/nservicebus-support-for-structuremap.html"
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>>
+<p>I've just committed support for <a href="http://structuremap.sourceforge.net/Default.htm">StructureMap</a> to the <a href="http://www.nservicebus.com/">NServiceBus</a> trunk so if you are using NSB and prefer StructureMap as your IoC-Container you can get the latest NSB build from <a href="http://teamcity.codebetter.com/viewType.html?buildTypeId=bt60&amp;tab=buildTypeStatusDiv">teamcity.codebetter.com</a> (thanks <a href="http://www.udidahan.com/">Udi</a> for trusting me as a committer)</p>
+<p>To configure NSB to use StructureMap use the following syntax: <!-- code formatted by http://manoli.net/csharpformat/ --></p>
+<div class="csharpcode">
+<pre class="alt">var bus = Configure.With()</pre>
+<pre>   .StructureMapBuilder()</pre>
+<pre class="alt">   .MsmqSubscriptionStorage()</pre>
+<pre>   .XmlSerializer()</pre>
+<pre class="alt">   .MsmqTransport()</pre>
+<pre>       .IsTransactional(<span class="kwrd">true</span>)</pre>
+<pre class="alt">       .PurgeOnStartup(<span class="kwrd">false</span>)</pre>
+<pre>   .UnicastBus()</pre>
+<pre class="alt">       .ImpersonateSender(<span class="kwrd">false</span>)</pre>
+<pre>   .CreateBus()</pre>
+<pre class="alt">   .Start();</pre>
+<p></div>
+<p>If you are using an explicit instance of the container it can be passed to the builder like this: </p>
+<div class="csharpcode"> 
+<pre class="alt">var container = <span class="kwrd">new</span> Container();</pre>
+<pre>&#160;</pre>
+<pre class="alt">var bus = Configure.With()</pre>
+<pre>   .StructureMapBuilder(container)</pre>
+<pre class="alt">   ...</pre>
+<p></div>
+<p>The bus itself is added to the container by NSB so to get access to is in your code just add a dependency for it the usual way: <!-- code formatted by http://manoli.net/csharpformat/ --></p>
+<div class="csharpcode"> 
+<pre class="alt"><span class="kwrd">public</span> <span class="kwrd">class</span> ClassThatNeedsAccessToTheBus</pre>
+<pre>{</pre>
+<pre class="alt">    <span class="kwrd">private</span> <span class="kwrd">readonly</span> IBus bus;</pre>
+<pre>&#160;</pre>
+<pre class="alt">    <span class="kwrd">public</span> ClassThatNeedsAccessToTheBus(IBus bus)</pre>
+<pre>    {</pre>
+<pre class="alt">        <span class="kwrd">this</span>.bus = bus;</pre>
+<pre>    }</pre>
+<pre class="alt">    <span class="kwrd">public</span> <span class="kwrd">void</span> PerformSomeLogic()</pre>
+<pre>    {</pre>
+<pre class="alt">        bus.Publish(<span class="kwrd">new</span> WhatEverEvent());</pre>
+<pre>    }</pre>
+<pre class="alt">}</pre>
+<p></div>
+<p>And to fill your message handlers with your own dependencies just configure them in SM and add them as constructor or setter dependencies : <!-- code formatted by http://manoli.net/csharpformat/ --></p>
+<div class="csharpcode"> 
+<pre class="alt"><span class="kwrd">public</span> <span class="kwrd">class</span> MyMessageHandler:IMessageHandler&lt;WhatEverEvent&gt;</pre>
+<pre>{</pre>
+<pre class="alt">    <span class="kwrd">private</span> IRepository repository;</pre>
+<pre>&#160;</pre>
+<pre class="alt">    <span class="kwrd">public</span> MyMessageHandler(IRepository repository)</pre>
+<pre>    {</pre>
+<pre class="alt">        <span class="kwrd">this</span>.repository = repository;</pre>
+<pre>    }</pre>
+<pre class="alt">&#160;</pre>
+<pre>    <span class="kwrd">public</span> <span class="kwrd">void</span> Handle(WhatEverEvent message)</pre>
+<pre class="alt">    {</pre>
+<pre>        repository.Save(message);</pre>
+<pre class="alt">    }</pre>
+<pre>}</pre>
+<p></div></p>
+<p>Edit: You can also configure dependencies using NServiceBus own syntax , more on that <a href="http://tech.groups.yahoo.com/group/nservicebus/message/2485">here</a>.</p>
+<p>If you have any troubles, suggestions etc. let me know directly or post them to the <a href="http://tech.groups.yahoo.com/group/nservicebus/">NSB group</a>.</p>

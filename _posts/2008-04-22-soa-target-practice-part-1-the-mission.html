@@ -1,0 +1,60 @@
+---
+layout: post
+title: ">SOA Target Practice: Part 1 - The Mission"
+date: 2008-04-22 20:00:00.000000000 +02:00
+categories:
+- SOA
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2008/04/soa-target-practice-part-1-mission.html"
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>>
+<p>As <a href="http://andreasohlund.blogspot.com/2008/04/target-practice-learn-to-fire-soa.html">promised</a> I will try to show you how to build SOA services using an practical example. (a very trivial example but it will do). So here's your mission if you choose to except it:</p>
+<p>As an employee of company X I would like to see a list of all X:s employees to find role, department, email, image etc for my colleagues.</p>
+<p>Like almost any assignment this is no green field project so we have the following systems present.</p>
+<ol>
+<li>A HR system for handling employees and their roles, salaries etc. </li>
+<li>A CMS system that runs the corporate intranet </li>
+</ol>
+<p>One of early misconceptions of SOA, was that Service == Web Service (this is luckily starting to go away). If you still believe that you'll get a SOA just by using web-services the solution should be obvious: Just wrap a web services around the HR system and call that service when users request the employee list. Hey, didn't that CMS vendor mention that their software was &quot;SOA ready&quot; because they had a web-service API so the CMS system is already part of our SOA </p>
+<p>With this naive approach you'll get <a href="http://bill-poole.blogspot.com/2008/04/web-services-integration.html">Service Oriented Integration</a> (SOI), while this is not all that bad it's not building the agile and reusable architecture that the business think they'll get.</p>
+<p>The upcoming posts will highlight the shortcomings of the above approach so we'll leave it for now.&#160; </p>
+<p>That said, lets see how we can translate these requirements to well designed services in our company's SOA. To do that we must answer the question:</p>
+<p><strong>What defines a good service?</strong></p>
+<p><a href="http://bill-poole.blogspot.com">Bill Poole</a> has the best definition I've seen so far: </p>
+<blockquote><p><a href="http://bill-poole.blogspot.com/2008/04/web-services-integration.html">In order to get a better quality SOA, we must align our services with the business, expose process centric interfaces, rely mainly on publish-subscribe messaging and decentralise our data</a></p>
+</blockquote>
+<p><font color="#666666">Ok, so good service should:</font></p>
+<ol>
+<li><font color="#666666">Align with the business</font> </li>
+<li><font color="#666666">Expose process centric interfaces</font> </li>
+<li><font color="#666666">Mainly communicate using pub/sub messaging</font> </li>
+<li><font color="#666666">Maintain data locally (decentralized data)</font> </li>
+</ol>
+<p><font color="#666666">Lets start with the first one, &quot;Services should align with business&quot;. It's easy to understand why it's good that Services align with the business but perhaps not so easy to figure out how to achieve it.</font></p>
+<p><font color="#666666">It's my experience that services align well with business when you model them around </font><font color="#666666"><a href="http://msdn2.microsoft.com/en-us/library/aa479075.aspx">business-capabilities</a>. Business-capabilities focuses on <strong>what </strong>a business does to reach its objectives (its capabilities), instead of <strong>how</strong> it does it (its business processes).</font></p>
+<p><font color="#666666">In our example</font><font color="#666666"> the business needs the capability to &quot;manage our human resources&quot; and &quot;communicate internal company information to employees&quot;. One of the benefits of modelling services around capabilities is that capabilities is relatively stable over time. I can imaging that even before IT was invented the same capabilities where needed by our business. </font></p>
+<p><font color="#666666">Changing software is costly so modelling our services around things that are fairly stable reduces the need for change == lower costs for maintenance.</font></p>
+<p><font color="#666666">Another important aspect is to design services with the correct granularity. Correctly grained services usually c</font><font color="#666666">oincide with traditional departments, e.g. Billing Service, Shipping Service etc. So if you have services that has functionality that spans more than one department it's usually a sign that you have too coarse grained services. On the other hand if you have a lot of services with functionality from the same department you might have too fine grained services.</font></p>
+<p>With the above guidelines in mind we decide to introduce the following two services:</p>
+<ul>
+<li><em>The Human Resources Service (HR-Service)</em></li>
+<li>The <em>&quot;Inform and collaborate with our employees&quot; Service. </em></li>
+</ul>
+<p>The latter will require be a lot of typing :) so lets refactor this one to <em>Intranet-Service. </em>This narrows the scope of the service a bit but I think the concept of using some kind of &quot;intranet&quot;&#160; to collaborate with employees is fairly stable so it will do for now. </p>
+<p>So now we've hopefully aligned our services with the business and thereby satisfied the first requirement. </p>
+<p>My next post will focus on the other three requirements of &quot;a good service&quot;. As we'll see these requirements highly affects how our services communicate with each other.<em>&#160;</em></p>
+<p>&#160;<img style="border-top-width: 0px; border-left-width: 0px; border-bottom-width: 0px; border-right-width: 0px" height="159" alt="image" src="assets/image6.png?imgmax=800" width="426" border="0" /></p>
+<p>Stay tuned...</p>

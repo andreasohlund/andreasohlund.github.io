@@ -1,0 +1,24 @@
+---
+layout: post
+title: Fog of war
+date: 2012-05-11 07:42:38.000000000 +02:00
+categories: []
+tags: []
+status: draft
+type: post
+published: false
+meta:
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>There are many types of coupling but by far most dangerous one is logical coupling. This type of coupling is very hard to see and it creates a fog of war that leads to bad architectual decisions and over engineered solutions.</p>
+<p>In response to my talk on how to avoid Fat events Jeremy Rosenberg asked me this excellent question:</p>
+<blockquote><p> If each service is responsible for presenting the data it owns, how is this conceptually any different than customer care querying each service to return big blobs of data</p></blockquote>
+<p>Here's the thing, the code that you ends up with would in theory be pretty much identical but in reality the logical coupling introduced by the will in most cases cause you to create radically different solutions. It also affects the way you organize code leading to maintenance problems. Let's illustrate this with a example from Jeremy's original question</p>

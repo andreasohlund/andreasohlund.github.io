@@ -1,0 +1,34 @@
+---
+layout: post
+title: Messaging shouldn't be used for queries
+date: 2010-04-22 14:34:00.000000000 +02:00
+categories:
+- Communication Patterns
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '299892753'
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2010/04/messaging-shouldn-be-used-for-queries.html"
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>When starting out with service bus style frameworks like NServiceBus it might be tempting to just replace them with whatever communication framework, if any, that was used before. The problem with this is that framework usually was oriented around synchronous or asynchronous request/response. WCF is is by far the most common example. The problem with this is while you can, but are firmly discouraged to, do synchronous request/response with NServiceBus that is not where the framework shines. NServiceBus aims to help you build robust and scalable solution using primarily one way fire and forget style communications. Nothing comes for free and the robustness that NServiceBus gives you also incurs a overhead that can be significant if your doing lots of requests where response times is of high importance.</p>
+<p style="clear: both;"><strong>What does all of this have to do with queries?</strong></p>
+<p>If we think about it queries are inherently about request/response. You send a query specification to some producer that queries some datastore and responds back with the matching data. No fire and forget here no matter how hard we look. Moving on we can also conclude that the response is usually needed within a short period of time. This is especially true if we're keeping users waiting for that data to be presented to them. This means that the fault tolerance and robustness gained from NServiceBus isn't really necessary since we don't have time to correct any issues that might cause the communication to fail. This means that the price we're paying in communication overhead isn't really buying us anything. No matter if there is another system or a user that is waiting for the result there isn't much they can do while they are waiting for that data to arrive. This means that the complexity introduced with asynchronous communication isn't really called for.</p>
+<p style="clear: both;">In summary we can see that queries is best solved with synchronous request/response, a communication pattern that NServiceBus isn't built for.</p>
+<p style="clear: both;"><strong>How should I then get at my data now that NServiceBus isn't a silver bullet?</strong></p>
+<p style="clear: both;">If queries are best served with synchronous request/response the natural choice is to use frameworks that are designed for just that, WCF, ado.net, native apis, REST, whatever.<br />
+So the next time your tempted to "send" off a query request message, think again!</p>
+<p style="clear: both;">With the broader adoption of <a href="http://www.udidahan.com/2009/12/09/clarified-cqrs/">CQRS style applications</a> we're moving towards solutions that keeps data needed for queries in a store close to the consumer. NServiceBus can help you a lot when it comes to keep that "read" store in sync with it's related "write" store but that's a topic for another post.</p>
+<p><br class="final-break" style="clear: both;" /></p>

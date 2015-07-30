@@ -1,0 +1,39 @@
+---
+layout: post
+title: Support for child containers in NServiceBus
+date: 2010-10-12 13:40:00.000000000 +02:00
+categories:
+- NHibernate
+- NServiceBus
+- StructureMap
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '299892764'
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2010/10/support-for-child-containers-in.html"
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>The NServiceBus trunk now has support for child|nested containers, thanks to <a href="http://jonathan-oliver.blogspot.com/">Jonathan Oliver</a> for supplying the patch. Be aware that child containers are not supported by spring.net so if you plan to take advantage of this you’d have to use one of the other containers supported by NServiceBus. Child containers is essentially a snapshot of the main container where transient instances is treated as singleton within the scope of the child container. This is useful when you’d want to scope instances for the duration of a web request or the handling of a message in NServiceBus. While this was possible before, child containers brings one more important feature to the table.</p>
+<p><strong>Deterministic disposal</strong></p>
+<p>Instance lifetime is usually not tracked by the container (Windsor is doing it though) and that means that you’d have to manually call dispose on any instance that needs deterministic disposal. Child containers solves this issue by automatically disposing all transient objects created within each specific child container. This is very handy when it comes to manage things like the NHibernate session. A more in depth description of child containers can be found <a href="http://codebetter.com/blogs/jeremy.miller/archive/2010/02/10/nested-containers-in-structuremap-2-6-1.aspx">here</a>.</p>
+<p>NServiceBus creates a child container for each transport message that is received, remember that transport messages can contain multiple “user defined messages”. This means that all transient instances that are created during that message processing is in scoped as singletons within the child container. This allows you to easily share for example the NHibernate session between repositories without <a href="http://andreasohlund.blogspot.com/2010/03/thread-static-caching-in-nservicebus.html">mucking around with thread static caching</a>. When the message has finished processing the child container and all transient instances is disposed. So if you need deterministic disposal just implement IDisposable.</p>
+<p>If you’re using the trunk (3.0) version of NServiceBus you can get a “session per transport message” by configuring the session as transient.</p>
+<p><script src="http://gist.github.com/622092.js?file=gistfile1.txt"></script></p>
+<p>This will allow you to inject your session to all components involved in processing each message</p>
+<p><script src="http://gist.github.com/622088.js?file=NHIbernateMessageHandler.cs"></script></p>
+<p>And when the message is processed the session will be disposed* and all resources like database connections etc are released.</p>
+<p>Child containers is a powerful feature that can simplify your code and should definitely be in your toolbox.</p>
+<p>A sample project demonstrating all this can be found <a href="http://github.com/andreasohlund/Blog/tree/master/ChildContainer/">here</a></p>
+<p>Happy coding!</p>
+<p>* The fact that NSeriviceBus wraps handling of messages with a TransactionScope means that the session is actually disposed when the transaction is completed. The call to session dispose will detect any active transaction and if one is present only “setup” the dispose to occur upon transaction completion.</p>

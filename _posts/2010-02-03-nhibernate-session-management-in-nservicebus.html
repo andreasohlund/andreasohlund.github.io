@@ -1,0 +1,79 @@
+---
+layout: post
+title: NHibernate session management in NServiceBus
+date: 2010-02-03 18:25:00.000000000 +01:00
+categories:
+- NHibernate
+- NServiceBus
+- StructureMap
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '299892737'
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2010/02/nhibernate-session-management-in.html"
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>Edit: If you’re on the trunk version of NServiceBus there is a better way to manage the session using the <a href="http://andreasohlund.blogspot.com/2010/10/support-for-child-containers-in.html">child container feature</a>.</p>
+<p style="clear: both;">This post explains how to manage the NHibernate session when using NServiceBus. In NServiceBus each message becomes a unit of work so the recommendation is to use a new session for each message that gets processed. NServiceBus wraps the handling of each message in a TransactionScope. This scope becomes the unit of work and guarantees consistency between the data store and the underlying queuing technology. Note that this requires the endpoint to be configured as "transactional", the default in NServiceBus.</p>
+<p style="clear: both;"><strong>Configuring the session factory</strong><br />
+First we have to configure the NHibernate session factory so that we can create new sessions. Creating a session factory is an expensive operation so we need configure it as a singleton.</p>
+<pre class="csharp" style="clear: both;">ISessionFactory sessionFactory = ConfigureSessionFactory();            Configure.Instance.Configurer.RegisterSingleton(typeof(ISessionFactory), sessionFactory);</pre>
+<p style="clear: both;">Creating and managing a session per request can be done in a number of ways so lets start with the simplest one.</p>
+<p style="clear: both;"><strong>Explicitly create the session in each handler</strong></p>
+<p>This brute force way is to open and use the session in each of your message handlers. An example of this is shown below</p>
+<pre class="csharp" style="clear: both;">public class SaveToDatabaseUsingRawSessionHandler : IHandleMessages&lt;SaveToDatabaseUsingRawSession&gt;    {        private readonly ISessionFactory sessionFactory;
+
+        public SaveToDatabaseUsingRawSessionHandler(ISessionFactory sessionFactory)        {            this.sessionFactory = sessionFactory;        }
+
+        public void Handle(SaveToDatabaseUsingRawSession message)        {            // the session will automatically enlist in the TransactionScope            // that NServiceBus wraps calls to messagehandlers in (given that the endpoint            // is configured as "transactional")            using (var session = sessionFactory.OpenSession())            {                session.Save(new PersistentEntity { Data = message.DataToPersist });            }        }    }</pre>
+<p style="clear: both;">The fact that NServiceBus wraps message handling in a TransactionScope means that NHibernate will automatically enlist and commit or rollback accordingly. The drawback with this solution is that you need to duplicate the call to create a session in all of your message handlers. If you use some kind of repository pattern you would have to explicitly pass the session to all those repositories in order to have them use the same session. Let's see how we can improve this a bit.</p>
+<p style="clear: both;"><strong>Storing the session in the NHibernate session context</strong></p>
+<p><strong> </strong></p>
+<p><strong> </strong>To avoid duplicate code and having to pass the ISession around we can use the <a href="http://nhforge.org/wikis/reference2-0en/context-sessions.aspx">context session feature</a> in NHibernate to store our session for the duration of the request. To do this we need a way to create a new session and store it in the session context when message processing begins. This is done using the message module feature in NServiceBus. Message modules are created by implementing the IMessageModule interface. NServiceBus will then automatically detect those classes and invoke them at the various stages of the message processing pipeline.</p>
+<p style="clear: both;">With this solution the code in our message handler is reduced to this:</p>
+<pre class="csharp" style="clear: both;">public class SaveToDatabaseUsingMessageModuleHandler : IHandleMessages&lt;SaveToDatabaseUsingMessageModule&gt;   {      private  readonly  ISessionFactory  sessionFactory;      public  SaveToDatabaseUsingMessageModuleHandler(ISessionFactory  sessionFactory)      {          this.sessionFactory = sessionFactory;      }
+
+      public void Handle(SaveToDatabaseUsingMessageModule message)       {           sessionFactory.GetCurrentSession().Save(new PersistentEntity { Data = message.DataToPersist });       }   }</pre>
+<p style="clear: both;">
+<p>And the message module is implemented like this:</p>
+<pre class="csharp" style="clear: both;"> public class NHibernateMessageModule : IMessageModule   {       private readonly ISessionFactory sessionFactory;
+
+       public NHibernateMessageModule(ISessionFactory sessionFactory)       {           this.sessionFactory = sessionFactory;       }
+
+       public void HandleBeginMessage()       {           CurrentSessionContext.Bind(sessionFactory.OpenSession());       }
+
+       public void HandleEndMessage()       {          //session is closed when the transactionscope is disposed so we           //don't have to do anything here       }
+
+       public void HandleError()       {       }   }</pre>
+<p style="clear: both;">Note that in order for this to work the NHibernate session context mode needs to be thread_static. A sample of how to configure the session factory can be found <a href="http://github.com/andreasohlund/Blog/blob/master/NHibernateSample/NHibernateSample.PersisterService/EndpointConfig.cs">here</a>.</p>
+<p style="clear: both;"><strong>Managing the session using your favorite IoC container</strong></p>
+<p style="clear: both;">This solution is equivalent to the one above but relies on the thread static cache mode of your container of choice. This example uses StructureMap if you prefer one of the other <a href="http://sourceforge.net/apps/mediawiki/nservicebus/index.php?title=Additional_containers">supported containers</a> please use the syntax of that container. Also note that this solution doesn't require a message module to open the session.</p>
+<p style="clear: both;">In order to get this to work we just configure the container to create a new ISession for each thread and cache it thread static. This means that we can change our repositories and message handlers to depend on ISession directly and let the container do it's magic. The container will then make sure that all code executed on the same thread will use the same ISession.</p>
+<p style="clear: both;">The container configuration looks like this:</p>
+<pre class="csharp" style="clear: both;">ObjectFactory.Configure(x=&gt;                            {                                x.For&lt;ISession&gt;().CacheBy(InstanceScope .ThreadLocal)                                    .Use(ctx =&gt; ctx.GetInstance&lt;ISessionFactory&gt;().OpenSession());
+
+                            });</pre>
+<p style="clear: both;">A sample message handler is seen below</p>
+<pre class="csharp" style="clear: both;">public   class   SaveToDatabaseUsingContainerCacheModeHandler :  IHandleMessages&lt; SaveToDatabaseUsingContainerCacheMode&gt;{    private  readonly  ISession  session;
+
+    public  SaveToDatabaseUsingContainerCacheModeHandler(ISession  session)    {        this.session = session;    }
+
+     public   void  Handle( SaveToDatabaseUsingContainerCacheMode message)     {        session.Save(new  PersistentEntity  { Data = message.DataToPersist });    }}</pre>
+<p style="clear: both;">This solution basically replaces the caching provided by NHibernate with the one provided by the container, with the added benefit of not needing the message module.</p>
+<p><span style="font-weight: bold;">Edit:</span></p>
+<p>To have the session recreated for each thread you'd have to <a href="http://andreasohlund.blogspot.com/2010/03/thread-static-caching-in-nservicebus.html">implement your own StructureMap lifecycle</a>.</p>
+<p><strong>Summary</strong></p>
+<p>NHibernate sessions in NServiceBus should be used on a "per message basis". Hopefully this post will give you ideas on how you can best solve this in your application. Running endpoints non-transactional is not recommended and should only be used under special circumstances. If you do need non transactional endpoints remember that you have to manage the NHibernate transaction your self!</p>
+<p style="clear: both;">A full sample can be found <a href="http://github.com/andreasohlund/Blog/tree/master/NHibernateSample/">here</a>.</p>
+<p style="clear: both;">As always comments/suggestions are most welcome!</p>

@@ -1,0 +1,76 @@
+---
+layout: post
+title: Accessing audit and error messages in NServiceBus v4.0
+date: 2013-06-17 12:56:03.000000000 +02:00
+categories:
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '1407268495'
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>NServiceBus has always supported centralized audit and <a href="http://andreasohlund.net/2010/03/15/errorhandling-in-a-message-oriented-world/">error handling</a> by allowing you to specify centralized queues where successfully and failed messages ends up. NServiceBus will guarantee that each message you send/publish will end up in one of those queues, hopefully the audit queue:). Earlier versions of NServiceBus had some rudimentary support for managing errors but for audit messages it was up to you as a user to make something useful with all that data. This has now changed with the introduction of <a href="http://particular.net/ServiceInsight">ServiceInsight</a>.</p>
+<p>ServiceInsight gives you a graphical view of your messages flows, insight into why a given message has failed and also a way to issue retries for those messages. Since queues are not really that great for longtime storage of data we needed a way to process all those message in order to make it easier to query and manipulate them from the UI. We also decided to not limit access to just our own tools but instead make all data and operations on it available to you via a REST'ish api.</p>
+<p>The api is still early days but we hope to keep on expanding it to help you build management extensions for NServiceBus for your tool of choice.</p>
+<p>Official documentation is coming soon but I don't expect much to change from what's mentioned below.</p>
+<h2>Installing the backend</h2>
+<p>The api backend is installed automatically when you run the NServiceBus or the ServiceInsight installers. The backend is just a regular NServiceBus host that gets installed as a windows service. Once that is done it will continuously import messages from your audit and error queues and making the data available over http. By default the api will respond on http://localhost:33333/api but the installers will allow you to tweak the uri to your liking. If you forgot where it got installed you can always consult the following regkey:</p>
+<p><em>HKEY_LOCAL_MACHINE\SOFTWARE\ParticularSoftware\ServiceBus\Management</em></p>
+<p>Once installed the endpoint will import and index all error and audit messages.</p>
+<h2>Where did my errors go?</h2>
+<p>The management endpoint will import all errors into our internal storage and leave a copy in a queue called {name or your error q}.log so in your case it will most likely be in <strong>error.log.</strong></p>
+<p>This means that you can still run tool like QueueExplorer, ReturnToSourceQueue.exe etc to manage your errors in the same way as before if you don't have access to ServiceInsight.</p>
+<h2>Supported API calls</h2>
+<p>The API is heavily inspired by the <a href="http://developer.github.com/v3/">GitHub api guidelines</a> for urls, paging, sorting etc</p>
+<p>At the time of writing the following calls are supported:</p>
+<p>GET <strong>/audit  </strong> - lists all messages successfully processed</p>
+<p>GET <strong>/endpoints/:name/audit</strong>  - lists all messages successfully processed for the given endpoint</p>
+<div></div>
+<div>GET <strong>/errors</strong>   - lists all failed messages</div>
+<div></div>
+<div>GET<strong> /endpoints/:name/errors</strong>  - lists all failed messages for the given endpoint</div>
+<p>GET <strong>/messages/:id</strong> - Gets the given message</p>
+<p>GET <strong>/messages/search/:criteria</strong> - Does a free text search with the given lucene query</p>
+<p>GET<strong> /endpoints</strong> - Lists all the known endpoints</p>
+<p>GET <strong>/endpoints/:name/messages</strong> - Lists all messages (including failed ones) for the given endpoint</p>
+<p>GET <strong>/conversations/:id</strong>- Gets all message for the given conversation id. (I'll talk more about conversations in a follow up post)</p>
+<h2><span style="font-size: 13px;">In terms of updates we only support one at the moment:</span></h2>
+<p>POST <strong>/errors/:id/retry</strong>  - Issues as retry for the given message. Returns Http Accepted  (202) if successful since the actual retry is performed async.</p>
+<p>&nbsp;</p>
+<h2>Security</h2>
+<p>The is no explicit security in place at the moment and the service is expected to run on a secured server that only authorized personnel has access to.</p>
+<div></div>
+<h2>Lets see it in action</h2>
+<p>I've created a few ScriptCs scripts to show the usage of some of the above calls.</p>
+<ul>
+<li><a href="https://github.com/andreasohlund/NServiceBus.ScriptCs/blob/master/Management/ListErrors.csx">List all errors</a></li>
+<li><a href="https://github.com/andreasohlund/NServiceBus.ScriptCs/blob/master/Management/ListEndpoints.csx">List all endpoints </a></li>
+</ul>
+<div>The full repo can be found here:</div>
+<div></div>
+<div><a href="https://github.com/andreasohlund/NServiceBus.ScriptCs">https://github.com/andreasohlund/NServiceBus.ScriptCs</a></div>
+<div></div>
+<div>Latest unstable Management API:</div>
+<div><a href="http://builds.nservicebus.com/viewLog.html?buildId=4651&amp;tab=artifacts&amp;buildTypeId=bt42">http://builds.nservicebus.com/viewLog.html?buildId=4651&amp;tab=artifacts&amp;buildTypeId=bt42</a></div>
+<div></div>
+<p>Please take it for a spin and tell me what you think!</p>
+<p>You can use the <a href="https://github.com/NServiceBus/NServiceBus/tree/4.0.0/Samples/VideoStore.Msmq">Video store sample</a> that comes with NServiceBus to generate some test data if you don't have a v4 system up and running!</p>
+<p>&nbsp;</p>
+<p><strong>What is missing?</strong></p>
+<p><strong>Which tools would you build NServiceBus plugins for?</strong></p>
+<p>Comments are most welcome!</p>
+<p>&nbsp;</p>
+<p><strong>Limitations:</strong></p>
+<p>* The first drop only supports the MSMQ transport but support for the others is our top priority so expect support for all other transports in the very near future</p>
+<p>&nbsp;</p>

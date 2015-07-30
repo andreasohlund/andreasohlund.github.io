@@ -1,0 +1,44 @@
+---
+layout: post
+title: Using RavenDB in NServiceBus - Connecting
+date: 2012-01-30 08:00:26.000000000 +01:00
+categories:
+- NServiceBus
+- RavenDB
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '557398013'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>In a previous <a href="http://andreasohlund.net/2012/01/27/using-ravendb-in-nservicebus-installing/">post </a>I talked about the different ways to make sure that you have a Raven server available in order for your NServiceBus endpoints to store their data. In this post we'll look at the different options for connecting to that Raven server.</p>
+<p>To tell NServiceBus to use Raven for persistence is a easy as calling Configure.RavenPersistence(). This is the default configuration and it uses the following conventions:</p>
+<ol>
+<li>If no master node is configured it will assume that a Raven server is running at http://localhost:8080, the default url for RavenDB.</li>
+<li>If a master node is configured the url used will be: http://{masternode}/:8080</li>
+<li>If a connection string named "NServiceBus.Persistence" is found the value of the connectionString attribute will be used. This pretty much give you full control over which Raven server your endpoint will use</li>
+</ol>
+<div>If NServiceBus detects that any of the Raven related storage's is used, Saga, Subscription, Timeouts, etc the above will be automatically configured for you. So in essense there should be no need for you to explicitly configure Raven unless you need to override the defaults.</div>
+<h3>Overriding the defaults</h3>
+<p>There are a few situations where the default behavior might not be good enough for you.</p>
+<ul>
+<li><strong>You want to use your own connection string</strong> - If you're using Raven for your own data as well you might want to share connection string. You do this by using the Configure.RavenPersistence(string connectionString) signature. This tells NServiceBus to connection to the server specified in that string. The default connection string for RavenDB is "RavenDB".</li>
+<li><strong>You want to specify a explicit database name - </strong>If you want to control the database name in code instead of configuration you would use the  Configure.RavenPersistence(string connectionString, string databaseName) signature. This could be useful in multi tenant scenarios</li>
+</ul>
+<h3>What database will be used?</h3>
+<p>After connecting to a Raven server we need to decide which actual database to use. Unless we find a default database specified in the connection string NServiceBus will use the <a href="http://andreasohlund.net/2012/01/27/convention-over-configuration-in-nservicebus-3-0/">endpoint name</a> as the database name. So if your endpoint is named "MyServer" the database name will be "MyServer". Each endpoint will have a separate database unless you explicitly override using the connection string. RavenDB will automatically create the database if it doesn't already exist.</p>
+<p>A detailed explanation of the endpoint name concept can be found <a href="http://andreasohlund.net/2012/01/27/convention-over-configuration-in-nservicebus-3-0/">here</a>.</p>
+<h3>Can I use the IDocumentStore used by NServiceBus for my own data?</h3>
+<p>No the Raven client is merged and internalized into the NServiceBus assemblies so if you want to use Raven for your own purposes you need to reference the Raven client and setup your own document store.</p>
+<h3>How do I look at the data?</h3>
+<p>Just open a web browser and type the url if the Raven server, this will open up the <a href="http://ravendb.net/docs/studio">Raven DB management studio</a>.</p>

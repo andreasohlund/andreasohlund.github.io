@@ -1,0 +1,53 @@
+---
+layout: post
+title: Migrating to NServiceBus 3.0 - Timeouts
+date: 2012-03-23 11:07:18.000000000 +01:00
+categories:
+- Migration
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '621616992'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>In this post I'll go through the different options you have when it comes to migrating your 2.6 Timeouts to the new 3.0 format. For those of you that aren't familiar with the NServiceBus timeouts the short explanation is that NServiceBus supports durable timeouts that survives process  restarts. In order to do that we need to store the timeouts on disk. In 2.6 the default storage was a MSMQ queue but in 3.0 it's RavenDB and this is why you <span style="text-decoration: underline;">might</span> need to migrate. I say might because the actual timeout messages that gets sent over the wire is compatible between 2.6 and 3.0.1</p>
+<p><strong>Note</strong>: The reason that you need to be on <a href="http://nservicebus.com/Downloads.aspx">NServiceBus 3.0.1</a> for this to work is that there was a bug in 3.0.0 that made the timeout incompatible. This is now fixed in 3.0.1</p>
+<p>This means that you can run the 2.6 and 3.0.1 TimeoutManagers (TM) in parallel until there are no more 2.6 timeouts left and then decommission the 2.6 TM.</p>
+<p>These are the steps you need to take if you plan to skip migration and run the TimeoutManagers side by side.</p>
+<ol>
+<li>Upgrade your endpoint to 3.0.1</li>
+<li>Configure the endpoint to use the built in TM in 3.0, new timeouts will be sent to this TM from your endpoint.</li>
+<li>Keep the 2.6 TM running, existing timeouts that expire will be sent to you new 3.0.1 endpoint. (make that you keep the name of the input queue the same)</li>
+<li>Decommission your 2.6 TM when all timeouts are expired, you know this be looking at the storage queue which should be empty when this happens. The default name of the storage queue  is "Timeout.Storage" but please check your configuration to be sure. Note that this is <span style="text-decoration: underline;">NOT</span> the same queue as the input queue that you would have configured in your endpoint mappings.</li>
+</ol>
+<h2>Why would I want to migrate then?</h2>
+<p>The fact that timeouts are durable means that they could and usually are set to a time far in the future. For example if you have insurances with long cycles you can have your renewal saga set to wake up in X years. In this situation you don't want to run both timeout managers in parallel for that long time. This is when you would consider doing a migration instead. To do this we provide a tool, either in the zip download (/Tools/Migration/TimeoutMigrator.exe) or in the NServiceBus.Tools NuGet package.</p>
+<p>This tool will extract your 2.6 Timeouts and send them over to the new 3.0 TM that will be responsible for managing them. Before I go through the steps we need to talk about those of you that require zero downtime deployments. The reason for this is that the 2.6.0.1504 doesn't support hot migrations. This means that you need to upgrade to NServiceBus 2.6.0.1511 if you want to migrate your timeouts with your system still running. With that out of the way lets look at how you would use the tool to migrate.</p>
+<p>1. Upgrade your endpoint to 3.0.1</p>
+<p>2. Make sure to run the <a href="http://andreasohlund.net/2012/01/26/installers-in-nservicebus-3-0/">installers </a>so that the <a href="http://andreasohlund.net/2012/01/27/convention-over-configuration-in-nservicebus-3-0/">dedicated input queue for the 3.0 TM</a> gets created.</p>
+<p>3. If you haven't upgraded to <a href="http://nservicebus.com/Downloads.aspx">2.6.0.1511</a> you need to shutdown the 2.6 TM.</p>
+<p>4. Run the TimeoutMigrator.exe. If you only want to migrate timeouts older than a specific time you can specify that using the -migrateOlderThan {minutes} switch. This will extract the timeouts and send them to the new 3.0 TM. The tool will ask you for the source and destination queues if not specified on the command line.</p>
+<p>The command line switched are:</p>
+<p>-storageQueue {name of the 2.6 storage queue}</p>
+<p>-destination {name of the 3.0 TM input queue}</p>
+<p>Typical settings would be:</p>
+<p>-storageQueue Timeout.Storage</p>
+<p><a href="http://andreasohlund.net/2012/01/27/convention-over-configuration-in-nservicebus-3-0/">-destination {endpointName}.Timeouts</a></p>
+<h2>In closing</h2>
+<ul>
+<li>Make sure to use NServiceBus 3.0.1 or higher</li>
+<li>Update to NServiceBus 2.6.0.1511 if you need to do a zero downtime migration</li>
+<li>Please test the process in your Q&amp;A environment to make sure that you have the correct settings</li>
+</ul>
+<p>That's all there is to it. Good luck!</p>

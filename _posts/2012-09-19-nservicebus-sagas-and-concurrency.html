@@ -1,0 +1,34 @@
+---
+layout: post
+title: NServiceBus sagas and concurrency
+date: 2012-09-19 21:31:34.000000000 +02:00
+categories:
+- NServiceBus
+- Sagas
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '850942284'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>The question on how the NServiceBus sagas handle concurreny came of on <a href="http://stackoverflow.com/questions/12370389/nservicebus-concurrent-access-to-saga-data">stackoverflow</a> and my answer got long winded and turned into a blog post.</p>
+<p>If your endpoints is running with more than 1 worker thread there is the possibility that multiple messages will hit the same saga instance at the exact same time. To give you ACID semantics in this situation NServiceBus will use the underlying storage to produce consistent behavior by only allowing one of the threads to commit. Most of this is handled automatically for you by NServiceBus but there are a few things you need to be aware of.</p>
+<p>We can divide up concurrent access to saga instances into 2 scenarios. The first is when there is no existing saga instance and multiple threads will try to create a new instance of what should be the same saga instance. The other is where a saga instance already exists in storage and multiple threads try to update that same instance . Lets look at both scenarios in detail and what options you have.</p>
+<h2>Concurrent access to non existing saga instances</h2>
+<p>Sagas are started by the message types you handle as <em><strong>IAmStartedByMessages</strong></em> of T and if more than one of those are processed concurrently and is mapped to the same saga instance there is a risk that more than one thread will try to create a new saga instance. In this case we can only allow one thread to commit. The others will rollback and the built-in retries in NServiceBus will kick in and on the next retry the saga instance will be found and the race condition is solved there now will be a update on that saga instance instead. This can of course also result in concurrency problems but they are solved as mentioned in the next section. NServiceBus solves this be requiring you to create a unique constraint in your database for the property that you're correlating on. In NServiceBus 2.X you had to create this constraint your self but in 3.X we have the<em><strong> [Unique]</strong> </em>attribute. If you put that attribute on one of your saga data properties NServiceBus will create the constraint for you, this works for both the NHibernate and the RavenDB saga persister. With that constraint in place only one thread will be allowed to create a new saga instance.</p>
+<p>In the future we'll use this constraint to do even smarter things like <a href="https://github.com/NServiceBus/NServiceBus/issues/314">auto mapping of your messages</a>.</p>
+<h2>Concurrent access to existing saga instances</h2>
+<p>For this to work in a predictable way we rely on the optimistic concurrency support by the underlying database. This means that if more than one thread tries to update the same saga instance the database will detect this and only allow one of them to commit. If this happens the retries will occur and the race condition solved.</p>
+<p>If you're using the RavenDB saga persister you don't have to do anything since we <a href="http://ravendb.net/kb/16/using-optimistic-concurrency-in-real-world-scenarios">turn on optimistic concurrency</a> automatically for you. When running using the NHibernate saga persister we require you to add a <a href="http://ayende.com/blog/3946/nhibernate-mapping-concurrency">"Version" property to you saga data so that NHibernate can work its magic</a>. In NServiceBus 4.0 will<a href="https://github.com/NServiceBus/NServiceBus/issues/649"> make this even easier for you</a> by enabling the optimistic-all option if no Version property is found.</p>
+<p>Another option is to use a <a href="http://msdn.microsoft.com/en-us/library/system.transactions.isolationlevel.aspx">transaction isolation level</a> of serializable  but will cause<a href="http://msdn.microsoft.com/en-us/library/ms173763.aspx"> excessive locking</a> so the performance degradation would be considerable. Note that "Serializable" is default isolation level for TransactionScopes. In NServiceBus 4.0<a href="https://github.com/NServiceBus/NServiceBus/issues/656"> we'll lower it to "ReadCommitted" for you</a> since we think that is a more sensible default</p>
+<p>Hope this helps!</p>

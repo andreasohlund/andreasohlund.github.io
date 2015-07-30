@@ -1,0 +1,38 @@
+---
+layout: post
+title: ">Structuring of projects"
+date: 2008-02-22 21:25:00.000000000 +01:00
+categories:
+- Guidelines
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2008/02/structuring-of-projects.html"
+  dsq_thread_id: '299892595'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>>
+<p><a href="http://www.ayende.com/Blog/">Ayende</a> has a nice <a href="http://ayende.com/Blog/archive/2008/02/22/The-two-project-solution.aspx">post</a> on structuring of solutions and projects. This is an interesting topic and there is a lot of interesting suggestions in the comments.&#160; In the post Ayende argues for &quot;2 project solutions&quot;, one for the application and one for the tests. I'm not a believer of solutions with huge numbers of project but I would argue for a bit more that 2 projects to enable me to enforce isolation by setting project references and then telling the devs not to add references without consulting the rest of the team. (read: Forbid them to add new references between projects :)</p>
+<p><a href="http://udidahan.weblogs.us/">Udi Dahan</a> summarizes this nicely with this comment:</p>
+<blockquote><p>Knowing who depends on what, and, more importantly, who should NOT depend on what is critical in scaling a project in terms of number of developers and size of code base. Being able to just look at the list of referenced projects and see a misplaced dependency is the first thing I look for in code reviews.      <br />&quot;Why do you have a reference to System.Data.SqlClient in your Domain Model?&quot;</p>
+</blockquote>
+<p>If I would setup a new web project today the structure should be something like this: </p>
+<ul>
+<li>MyApp.Domain : Domain objects </li>
+<li>MyApp.Services : Domain services </li>
+<li>MyApp.Infrastructure - Wrappers for external systems </li>
+<li>MyApp.Web - Content + MVC - classes </li>
+<li>MyApp.WebServices : Web-Services published be the application </li>
+<li>MyApp.Tests : Unit tests and Integration tests </li>
+</ul>
+<p>This works great for the small to medium size web projects that I'm involved in.</p>

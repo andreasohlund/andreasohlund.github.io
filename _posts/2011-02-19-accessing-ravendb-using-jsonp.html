@@ -1,0 +1,27 @@
+---
+layout: post
+title: Accessing RavenDB from Javascript
+date: 2011-02-19 15:20:26.000000000 +01:00
+categories: []
+tags:
+- Persistent view models
+- RavenDB
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '299892782'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p style="clear: both">I've been bugging Ayende regarding the lack of jsonp support in RavenDB. Not surprisingly he <a href="https://github.com/ayende/ravendb/commit/a9d6f07a803da615e3281211d787cac95b9155c5">fixed</a> it within a matter of days and as of <a href="http://builds.hibernatingrhinos.com/builds/ravendb-unstable">build 279</a> RavenDb supports jsonp. </p>
+<p style="clear: both">The support for jsonp enables you to access Raven directly from javascript and there by skip any server side code to return view data. Using jQuery the syntax for getting a list of "Auction Summaries" would be:</p>
+<p style="clear: both"><span style="  display: inline; float: left; margin: 0 10px 10px 0;"><script src="https://gist.github.com/835075.js"> </script></span><br style="clear: both" />Notice the jsonp: "jsonp", this is needed since jQuery defaults the name of the callback parameter to "callback". Raven expects this to be "jsonp" hence the override is needed.</p>
+<p style="clear: both">I love this feature since this will allow me to keep my query side uber thin. No MVC controllers, linq to whatever, OR-mappers etc etc. I just store the data in raven in whatever format my UI need and I'm done...</p>
+<p><br class="final-break" style="clear: both" /></p>

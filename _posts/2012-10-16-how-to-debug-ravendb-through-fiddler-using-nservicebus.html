@@ -1,0 +1,29 @@
+---
+layout: post
+title: How to debug RavenDB through fiddler using NServiceBus
+date: 2012-10-16 14:04:14.000000000 +02:00
+categories:
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '887590569'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>This is mostly a note to self since I always seems to forget how to do it:)</p>
+<p>To setup a NServiceBus endpoint to make all calls to RavenDB through fiddler you need to do the following:</p>
+<p>Configure the proxy for your endpoint by adding the following to your app.config</p>
+<p>[gist id=3899134]</p>
+<p>With the proxy setup we just need to change the Raven connection string to go through fiddler by adding:</p>
+<p>[gist id=3899139]</p>
+<p>That should be it, happy debugging!</p>

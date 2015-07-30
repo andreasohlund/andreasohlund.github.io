@@ -1,0 +1,38 @@
+---
+layout: post
+title: Talk on the new features in NServiceBus 3.0
+date: 2011-11-30 09:05:56.000000000 +01:00
+categories:
+- NServiceBus
+- Talks
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '488240444'
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>I'll be doing a <a href="http://skillsmatter.com/event/open-source-dot-net/nservicebus-3">talk over at Skills Matter</a> next week covering some of the new features in the upcoming release of <a href="http://www.nservicebus.com">NServiceBus</a>. The talk will be recorded but if you're located in London please stop by!</p>
+<p>Some of the things that will be covered includes:</p>
+<div>
+<ul>
+<li>Raven - NServiceBus will ship bundled with RavenDB, this means that everything from subscriptions to sagas will be managed for you in a production ready way without you having to configure anything</li>
+<li>Unobtrusive mode - You no longer need to reference any NServiceBus assemblies in order to define messages. This helps greatly when doing upgrades of the infrastructure it self</li>
+<li>Less configuration - One of the main focus points of the 3.0 release is to improve the black box experience so by following our conventions only a minimal amount of configuration is needed</li>
+<li>3.0 Gateway -  The gateway in 3.0 has got a major overhauls and is now included in the core. This means that every NServiceBus endpoint can by exposed over other channels like http, ftp, etc</li>
+<li>Data Bus - 3.0 introduces a data bus that will help you transport large chunks of data without worrying about the limitations of the underlying transport. This is particularly important when running in cloud environments where limits on message size is usually much lower than on-premise</li>
+<li>Improved pluggability - We have made it much easier to plugin other transports. A great example is the support for running on Windows Azure that now can be done with relatively little code.</li>
+<li>Modeling tools - Getting started with a messaging framework can be quite a challenge and to help developers getting started there is now a modelling tool that can help you lay out the initial structure of your solution</li>
+</ul>
+<p>This is just a few points so there will of course be a Q &amp; A after the talk where we can discuss other questions that you might have.</p>
+<p>Hope to see you there!</p>
+</div>

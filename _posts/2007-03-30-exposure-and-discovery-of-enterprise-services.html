@@ -1,0 +1,28 @@
+---
+layout: post
+title: ">Exposure and discovery of enterprise services"
+date: 2007-03-30 08:09:00.000000000 +02:00
+categories:
+- SOA
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2007/03/exposure-and-discovery-of-enterprise.html"
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>>A while ago I asked <a href="http://udidahan.weblogs.us">Udi Dahan</a> about his view on exposure and discovery of enterprise services.</p>
+<p>My original Q:</p>
+<p>"Do you have any best practices/real life examples on how to expose/discover enterprise services? (both internal and external services)</p>
+<p>Naming conventions? (eg. [company].[Department].[SomeName]??)<br />If not using an ESB, what are the options for discovery and what do you prefer? (DNS? , UDDI ?)<br />If using an ESB how do you go about? , Best Practices?"</p>
+<p>Udi answered this with a <a href="http://udidahan.weblogs.us/archives/437">podcast</a></p>
+<p>I agree with Udi that using asyncronous messaging patterns with a logical "middelman"/topic in between producer and consumer will simplify the "exposure" part of the problem to the simple matter of deciding on a name for that topic. The advise here was to go a bit deeper (even as deep a separate topic for each messagetype) to get better control and monitoring of service activity. I like the idea and will definitly try to go down this road in some upcoming SOA-project.<br />As for "discovery" this is mostly a design time issue so this should not be performed runtime but instead be controlled using SOA Governance .</p>

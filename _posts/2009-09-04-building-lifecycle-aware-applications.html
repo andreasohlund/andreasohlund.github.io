@@ -1,0 +1,55 @@
+---
+layout: post
+title: Building lifecycle aware applications
+date: 2009-09-04 09:13:00.000000000 +02:00
+categories:
+- NServiceBus
+- StructureMap
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '299892693'
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2009/09/building-lifecycle-aware-applications.html"
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>Designing applications that can easily be reconfigured for the different stages in the development lifecycle is important when it comes to shorten the time between development and production. To achieve this we need ways to easily change our applications behavior as it moves through the various stages of software development. Having frameworks that help in this is of course a great start but it’s ultimately up to you as a developer to design and code your application to be lifecycle aware. <a href="http://www.udidahan.com">Udi Dahan</a> has a nice <a href=" http://www.udidahan.com/2009/08/15/convention-over-configuration-the-next-generation/">post</a> on the subject that also describes how NServiceBus tries to help in this matter.</p>
+<p>Enough talk let’s see an example on how we can combine NServiceBus and StructureMap to create easily reconfigurable applications.</p>
+<h3>Lifecycle awareness NServiceBus style</h3>
+<p>In my last post I explained how we could send emails in a “transactional” way using NServiceBus. The solution boiled down to a simple message handler that sends emails through it’s IEmailGateway dependency. Let’s see how we hook up to the built-in profiles of NServiceBus and configure our own dependencies accordingly.</p>
+<p>The message handler was implemented as follows:</p>
+<pre class="csharp">public class SendEmailMessageHandler : IMessageHandler&lt; SendEmailRequest &gt;{    private readonly IEmailGateway emailGateway;
+
+    public SendEmailMessageHandler(IEmailGateway emailGateway)    {        this.emailGateway = emailGateway;    }
+
+    public void Handle(SendEmailRequest message)    {        emailGateway.SendEmail(message.ToAdress,                               message.Subject,                               message.Body);    }}</pre>
+<p>To ease our integration testing we decide to swap out the implementation of IEmailGateway to something that just logs the request to a folder on disk so that we can verify the results either automatically or using our testers.  To do this we configure our endpoint as follows:</p>
+<pre class="csharp">public class EndpointConfigWithAwareness : IConfigureThisEndpoint,                                    As.aServer,                                    IDontWant.Sagas,                                    ISpecify.ToRun&lt; DemoEndpoint &gt;,                                    IWantCustomInitialization,                                    IHandleProfile&lt; Integration &gt;{    private static bool IsInProductionMode = true;
+
+    public void Init(Configure configure)    {        if (IsInProductionMode)            configure.Configurer.ConfigureComponent&lt; SmtpGateway &gt;(ComponentCallModelEnum.Singlecall);        else            configure.Configurer.ConfigureComponent&lt; FileLoggingOnlyEmailGateway &gt;(ComponentCallModelEnum.Singlecall);    }
+
+    public void Init(IConfigureThisEndpoint specifier)    {        IsInProductionMode = false;    }}</pre>
+<p>As you can see we implement IHandleProfile&lt;Integration&gt; and uses the call to Init(…) to adjust the mode variable. With this in place we can easily configure the IEmailGateway dependency accordingly. So now when we start the NServiceBus in integration mode , NServiceBus.Host.exe /integration, our emails will be logged to disk instead of being sent to the real SMTP-server.</p>
+<h3>Lifecycle awareness vNext</h3>
+<p>As you can imagine this solution gets kind of ugly when you have more dependencies and more profiles.  As a nice “coincidence” my container of choice, StructureMap, also has the concept of profiles. Please read <a href="http://www.lostechies.com/blogs/chad_myers">Chad Myers</a> <a href="http://www.lostechies.com/blogs/chad_myers/archive/2008/07/17/structuremap-medium-level-usage-scenarios.aspx">post for an in-depth explanation</a>. Let’s modify our configuration to combine the both:</p>
+<pre class="csharp">public class EndpointConfigUsingStructuremap : IConfigureThisEndpoint,                                   As.aServer,                                   ISpecify.ContainerTypeToUse&lt; StructureMapObjectBuilder &gt;,                                   IDontWant.Sagas,                                   ISpecify.ToRun&lt; DemoEndpoint &gt;,                                   IHandleProfile&lt; Integration &gt;{    private static readonly string IntegrationProfile = typeof (Integration).Name;
+
+    public  EndpointConfigUsingStructuremap()    {        ObjectFactory.Configure(x =&gt;                                    {                                        x.ForRequestedType&lt; IEmailGateway&gt;()                                            .TheDefaultIsConcreteType&lt; SmtpGateway &gt;();
+
+                                        //setup the alterations for the integration profile                                        x.CreateProfile(IntegrationProfile)                                            .For&lt; IEmailgateway &gt;()                                                .UseConcreteType&lt; FileLoggingEmailGateway &gt;();                                    });    }
+
+    public void Init(IConfigureThisEndpoint specifier)    {        //switch profile to "integration"        ObjectFactory.Profile = IntegrationProfile;        }}</pre>
+<p>The code above starts with configuring NServiceBus to use StructureMap as the container. Then we move on to configure all our components using the StructureMap API. Using “CreateProfile” we creates a “Integration” profile where we configure the special version of IEmailGateway to use when running in that profile. With all this setup it’s straight forward to use the NServiceBus profile to activate the correct StructureMap profile.</p>
+<h3>Conclusion</h3>
+<p>Building software that is easily configurable for different purposes is becoming increasingly important to enable rapid development and tight release cycles. To succeed make sure to pick frameworks that enables you to be lifecycle aware but in the end it’s up to you to “connect the dots”.</p>
+<p>The source code an a fully working sample of all this can be found <a href="http://code.google.com/p/andreasohlund/source/browse/#svn/trunk/BlogPosts/NServiceBus/LifecycleAwareness">here</a>.</p>

@@ -1,0 +1,60 @@
+---
+layout: post
+title: ">Command-Query separation"
+date: 2008-09-04 21:07:00.000000000 +02:00
+categories: []
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2008/09/command-query-separation.html"
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>>
+<p>The command-query separation principle has been around for a while but recently I've come across a few situations where CQS can be useful outside of programming for which it was originally intended for. It's interesting to discover that principles devised for a specific context can be applied successfully to other areas&#160; such as application design and SOA services. In this first post I will explain what CQS means in it's traditional programming context.</p>
+<h5>CQS and coding</h5>
+<p>Wikipedia has the <a href="http://en.wikipedia.org/wiki/Command-query_separation">following</a> definition of CQS.</p>
+<blockquote><p>every <a href="http://en.wikipedia.org/wiki/Method_(computer_science)">method</a> should either be a <i>command</i> that performs an action, or a <i>query</i> that returns data to the caller, but not both</p>
+</blockquote>
+<p>Ok, that tells you to separate code that &quot;changes&quot; things from code that just reads &quot;things&quot;. The main reason for this is that code that violates CQS is very hard to understand just by looking at it. Lets try to explain this with a simple example. </p>
+<p>Requirements:</p>
+<p><em>If a customer has ordered products with a total amount above a certain threshold during the last year he should be upgraded to gold status.</em></p>
+<p>One way solving this would be:
+<div class="wlWriterSmartContent" id="scid:57F11A72-B0E5-49c7-9094-E3A15BD5B5E6:7a5318d8-b1a5-4546-a7ee-1b2bfccd0216" style="padding-right: 0px; display: inline; padding-left: 0px; float: none; padding-bottom: 0px; margin: 0px; width: 455px; padding-top: 0px">
+<pre style="background-color:White;;overflow: auto;" />
+<div><!--</p>
+<p>Code highlighting produced by Actipro CodeHighlighter (freeware)<br />http://www.CodeHighlighter.com/</p>
+<p>--><span style="color: #000000;"> </span><span style="color: #0000FF;">if</span><span style="color: #000000;"> (customer.PlaceOrder(order, LastYear) </span><span style="color: #000000;">&gt;</span><span style="color: #000000;"> RatingThreshold.Gold) <br />{<br />   customer.UpgradeTo(CustomerRating.Gold);<br />}</span></div>
+<p><!-- Code inserted with Steve Dunn's Windows Live Writer Code Formatter Plugin.  http://dunnhq.com --></div>
+<p></p>
+<p>This code violates CQS in by having the PlaceOrder method return the total order value accumulated since the date specified by the second parameter. Violating CQS always lead to code that is harder understand just by reading it. A quick look at the code above will not give answer to questions like.</p>
+<ul> 
+<li>What effect does the parameter LastYear have on place order? </li>
+<li>Is customers upgraded if a single order is above the threshold? </li>
+<p></ul>
+<p>Given the fact that developers spend most of their time browsing source code makes all efforts to write code that is clean and easy to understand extremely valuable.</p>
+<p>So let's see how can we refactor the code above to avoid violating CQS:</p>
+<div class="wlWriterSmartContent" id="scid:57F11A72-B0E5-49c7-9094-E3A15BD5B5E6:fb188102-54b2-4947-8e05-74987c49e8e0" style="padding-right: 0px; display: inline; padding-left: 0px; float: none; padding-bottom: 0px; margin: 0px; padding-top: 0px">
+<pre style="background-color:White;;overflow: auto;" />
+<div><!--</p>
+<p>Code highlighting produced by Actipro CodeHighlighter (freeware)<br />http://www.CodeHighlighter.com/</p>
+<p>--><span style="color: #000000;">customer.PlaceOrder(order);</p>
+<p>var totalOrderValue </span><span style="color: #000000;">=</span><span style="color: #000000;"> customer.TotalOrderValueSince(LastYear);   </p>
+<p> </span><span style="color: #0000FF;">if</span><span style="color: #000000;"> (totalOrderValue </span><span style="color: #000000;">&gt;</span><span style="color: #000000;"> RatingThreshold.Gold)   <br />{   <br />   customer.UpgradeTo(CustomerRating.Gold);   <br />}</span></div>
+<p><!-- Code inserted with Steve Dunn's Windows Live Writer Code Formatter Plugin.  http://dunnhq.com --></div>
+<p>If you look at the code above you will see that it's much easier to understand just by reading in (no need to examine the internals of PlaceOrder). We achieved this by separating the query part into a separate method, TotalOrderValueSince. By doing this we can now answer the questions above.</p>
+<ul> 
+<li>The order value that is used is clearly the accumulated value for the last year. </li>
+<li>Customers is obviously only upgraded if the current order makes the accumulated value exceed the threshold for gold customer status. </li>
+<p></ul>
+<p>So the conclusion is that enforcing CQS in an programming context gives you cleaner and more readable code. In my next post we will take a closer look on how CQS can be applied to improve application design.</p>
+<p>Stay tuned!!</p>

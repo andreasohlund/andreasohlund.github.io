@@ -1,0 +1,32 @@
+---
+layout: post
+title: Zero downtime deployments
+date: 2012-09-03 21:09:58.000000000 +02:00
+categories: []
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '829550484'
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>Zero downtime "deployments" or "upgrades" if you like, roughly the same number of hits on google, is that thing that every one says they are doing but when asked about how they are actually doing it there is usually not a clear answer.</p>
+<p>Lets try to digg a bit deeper into the concept. By definition it seems to imply that we can deploy|upgrade our system with "Zero" amount of downtime.</p>
+<h3>Downtime for who?</h3>
+<p>To answer that question we can follow the money and since business people pay us tech guys to build and run systems for them its clear that the downtime that matters is Business downtime. This means that servers, databases and other infrastructure pieces can be "down" as long as we're not down from a business perspective. That good, that actually gives us a chance to modify the above things without immediately beeing "down".</p>
+<h3>So when are we "down" then?</h3>
+<p>We are down when when our system no longer delivers the business value that is was built to deliver. This is where Service Level Agreements <a href="http://en.wikipedia.org/wiki/Service-level_agreement">SLA's</a> comes into play. SLA's puts actual numbers on how our system should perform in a wide range of aspects. Examples of SLA's can be our that our website should respond to user interactions within 10 seconds or be accessible some percentage of the year. Another example that is more business related is that placed orders should be processed within 5 minutes after beeing received from the customer. If we fail to deliver on those agreements we're by definition "down" in the eyes of the business.</p>
+<h3>Availability</h3>
+<p>If we measure the time we're up and meeting our SLA's during a period of time, lets say a year, and divide that with the total time of that period we get our <a href="http://en.wikipedia.org/wiki/Availability">availablility</a>. When dealing with availiability we usually talk about "<a href="http://en.wikipedia.org/wiki/Nines_(engineering)">number of nines</a>", 2 nines means 99% of the year. Shooting for "5 nines", 99.999%, is quite popular these days and that gives you a massive:) 5.256 minutes of downtime per year. I think we all realizes that if you have only 5 minutes of accepted downtime per year wasting any of it on deployments won't cut it since we need that buffer to handle unexpected failures no matter if our deployments are lightning fast. Even if we don't shoot for 5 nines the preasure to deliver business value continously force us to release more often so to pull that off we need to start looking into doing those releases without incurring any downtime. In other words we need to do zero downtime deployments.</p>
+<h3>Designing for zero downtime deployments</h3>
+<p>To have a fighting chance to do ZDD you have to design your system for it. Coming up with that design isn't easy, you have to spend time with your business to help them formalize their SLA's. You need to realize that not all parts of your system have the same SLA's and there for not the same need for ZDD. You can then use that knowledge to partition your system in such a way that ZDD only needed for the most important parts of the system where you have the tightest SLA's.</p>
+<p>Making these partitions talk to each other is where messaging shines. The reliability that comes with durable messaging is one of the key things that will enable you to evolve and deploy the different parts of your system independently, ultimately making Zero Downtime Deployments a achievable.</p>

@@ -1,0 +1,67 @@
+---
+layout: post
+title: Achieving consistency using NServiceBus
+date: 2009-08-24 12:31:00.000000000 +02:00
+categories:
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '299892689'
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2009/08/achieving-consistency-using-nsericebus.html"
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>Inconsistency problems in your application often occur when you are using technologies that are non transactional. Sending emails using SMTP is one example where there is no “rollback” in case something goes wrong. I want to talk about how asynchronous messaging in general and <a href="http://nservicebus.com/">NServiceBus</a> in specific can help you solve your inconsistency problems with minimal effort.</p>
+<p>Let examine a common situation where a user has signed up for some service that you provide and you need to create the account and send a confirmation email to the user. The code would look something along these lines:</p>
+<pre class="csharp">private IRepository repository;private IEmailGateway emailGateway;
+
+public void CreateUser(string userName,string password){    using(var transaction = new TransactionScope())    {        var user = new User                       {                           UserName = userName,                            Password = password                       };
+
+        repository.Save(user);
+
+        emailGateway.SendEmail(userName,                               "Account created",                               "Please click the following link to activate account: " +                               "http://mysite/confirm&amp;id=" + user.Id);
+
+        transaction.Complete();    }}</pre>
+<p>Where the IEmailGateway interface is implemented like this:</p>
+<pre class="csharp">public class SmtpGateway:IEmailGateway{    private readonly string host;    private readonly string fromAdress;
+
+    public SmtpGateway(string host, string fromAdress)    {        this.host = host;        this.fromAdress = fromAdress;    }
+
+    public void SendEmail(string toAdress, string subject, string body)    {        var smtpHost = new SmtpClient(host);
+
+        smtpHost.Send(fromAdress,toAdress,subject,body);    }}</pre>
+<p>At a first glance this code looks ok but the fact that SmtpClient doesn’t support transactions means that if our database call rolls back we’ll send the email without saving the user to our database. This inconsistency will result in users getting confirmation emails without being able to login. Inconsistency bugs is very painful to debug and usually only shows up when the system is under heavy load so they should be avoided at all costs. It’s also obvious that the duration of the synchronous call to the SMTP – server is a direct factor of the total call time and it’s probably just a matter of time before the performance police will come knocking on our door. Further our availability will now have to factor in the availability of the SMTP – server which will make it much harder to achieve high availability. I’ll save the in depth explanation of the availability aspects for a future post so let’s move on to see how we can solve our inconsistency problem by adding pinch of asynchronous messaging.</p>
+<h4>NServiceBus to the rescue</h4>
+<p>In order to be consistent we need to wrap the SMTP-call with something that supports transactions. Let’s accomplish that using NServiceBus combined with it’s MSMQ-transport to send a SendEmailRequest instead of actually calling the SMTP-server. The fact that MSMQ supports transactions means that if either the database call to save the user or the call to send the message fails nothing will be committed and we will still be in a consistent state. The modified code looks like this:</p>
+<pre class="csharp">private readonly IRepository repository;private readonly IBus bus;
+
+public void CreateUser(string userName, string password){    using (var transaction = new TransactionScope())    {        var user = new User        {            UserName = userName,            Password = password        };
+
+        repository.Save(user);
+
+        var emailRequest = new SendEmailRequest                               {                                   ToAdress = userName,                                   Subject = "Account created",                                   Body = "Please click the following link to activate account: " +                                          "http://mysite/confirm&amp;id=" + user.Id                               };
+
+        bus.Send(emailRequest);
+
+        transaction.Complete();    }}</pre>
+<p>As you can see the code is almost identical as before with the important difference in that we’re now sending our email using a durable asynchronous call.</p>
+<p>To process the message, on the same server or on a different server, we just implement a message handler for the SendEmailRequest message and host that handler using the <a href="http://justinram.wordpress.com/2009/08/03/how-the-new-host-feature-works-in-nservicebus/">generic host that ships with NServiceBus</a>:</p>
+<pre class="csharp">public class SendEmailMessageHandler : IMessageHandler{    private readonly IEmailGateway emailGateway;
+
+    public SendEmailMessageHandler(IEmailGateway emailGateway)    {        this.emailGateway = emailGateway;    }
+
+    public void Handle(SendEmailRequest message)    {        emailGateway.SendEmail(message.ToAdress,            message.Subject,            message.Body);    }}</pre>
+<p>If the message handler fails to process the message after the configured number of retries the message will be moved to an error queue where the administrator need to decide what needs to be done in order to resolve the issue.</p>
+<h4>Conclusion</h4>
+<p>With a minimal change to our original code we can now guarantee consistency in our application. This setup will also be more testable because we only have to worry about stubbing out the SMTP-server when we are testing the message handler. The fact that we no longer have to wait for the SMTP– server will shorten our call times and boost performance. As a final benefit our application can now function with out the actual SMTP-server being up and running.  This means that our availability is no longer limited by the availability of the SMTP-server.</p>

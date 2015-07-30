@@ -1,0 +1,40 @@
+---
+layout: post
+title: Sagas and autocorrelation
+date: 2012-05-24 14:31:27.000000000 +02:00
+categories:
+- Best practices
+- In depth
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '702102537'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>Sagas often plays the role of coordinator, especially when used in integration scenarios. In essence this mean that the saga decides what to do next and then asks some one else to do it. This allows you to keep your sagas free from interacting with no transactional things like file systems, rest services, etc. The type of communication pattern best suited best for these type of interactions is the <a href="http://www.eaipatterns.com/RequestReply.html">request/response</a> pattern since there is really only one party interested in the response and that is the saga itself. A typical scenario would be a saga controlling the process of billing a customer through visa or mastercard. In this case you would probably have separate endpoints for making the webservice/rest-calls to each payment provider and a saga coordinating retries and fallback rules. Each payment request would be a separate saga instance so how would we know which instance to hydrate and invoke when the response comes back?</p>
+<p>The usual way to do this is to correlate on some kind of if and let the user tell us how to find the correct saga instance using that Id. While this is easily done we decided that this was common enough to warrant native support in NServiceBus for these type of interactions.</p>
+<h3>ISagaMessage in 2.X</h3>
+<p>In the 2.X version of NServiceBus the was handled by implementing the <em>ISagaMessage</em> interface on both the request and response. This would carry the saga id and effectively tell NServiceBus which saga instance to pull from the saga storage. This solution wasn't optimal since this required the user to pollute their messages with NServiceBus related interfaces. It was also up to the user to <a href="https://github.com/NServiceBus/NServiceBus/blob/v2.5/Samples/Manufacturing/HR.MessageHandlers/RequestOrderAuthorizationMessageHandler.cs#L16">transfer the saga id from the incoming request to the response</a> leading to bugs when developers forgot. With the limited extensibility model in 2.X this was pretty much all we could do but with the release of 3.0 and the introduction of message mutator all that changed.</p>
+<h3>Unobtrusive correlation in NServiceBus 3.0</h3>
+<p>In 3.0 we can now handle all this for you without getting in your way. If you do a IBus.Reply in response to a message coming from a saga we'll detect this and automatically set the correct headers so that we can correlate the reply back to the saga instance that issued the request.</p>
+<p>You can see all this in action in our <a href="https://github.com/NServiceBus/NServiceBus/tree/master/Samples/Manufacturing">Manufacturing sample</a>.</p>
+<p>In there you will see:</p>
+<ol>
+<li>How the saga is requesting a authorization of the order: <a href="https://github.com/NServiceBus/NServiceBus/blob/master/Samples/Manufacturing/OrderService/OrderService/OrderSaga.cs#L43">https://github.com/NServiceBus/NServiceBus/blob/master/Samples/Manufacturing/OrderService/OrderService/OrderSaga.cs#L43</a></li>
+<li>How the request is handled and a response is sent back: <a href="https://github.com/NServiceBus/NServiceBus/blob/master/Samples/Manufacturing/HR.MessageHandlers/RequestOrderAuthorizationMessageHandler.cs#L25">https://github.com/NServiceBus/NServiceBus/blob/master/Samples/Manufacturing/HR.MessageHandlers/RequestOrderAuthorizationMessageHandler.cs#L25</a></li>
+<li>And all this is done without any specific mapping needed: <a href="https://github.com/NServiceBus/NServiceBus/blob/master/Samples/Manufacturing/OrderService/OrderService/OrderSaga.cs#L19">https://github.com/NServiceBus/NServiceBus/blob/master/Samples/Manufacturing/OrderService/OrderService/OrderSaga.cs#L19</a></li>
+</ol>
+<p>Hopefully this will help you and make sagas even more powerful and easy to use!</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>

@@ -1,0 +1,141 @@
+---
+layout: post
+title: ">R# friendly Integration tests"
+date: 2009-03-16 19:49:00.000000000 +01:00
+categories:
+- Asp.Net MVC
+- Integration Tests
+- WatiN
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2009/03/r-friendly-integration-tests.html"
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>>
+<p>Writing integration tests with tools like WatiN usually involves a lot of &quot;magic strings&quot; which makes the tests very fragile and refactoring unfriendly. This leads to tests that are hard to maintain and as the project moves on they end up being commented out or not being run at all. There are two ways to produce integration test for web applications with tools like <a href="http://watin.sourceforge.net/">WatiN</a> , <a href="http://seleniumhq.org/">Selenium</a> etc.</p>
+<p>1. Record the tests with a recorder</p>
+<p>2. Write the tests using code.</p>
+<p>I prefer #2 because this lets me to produce my tests before the functionality is done. (Integration tests TDD-style) The technique described in this post apply to method #2.</p>
+<h4>So how can we produce more robust tests using Asp.Net MVC and WatiN?</h4>
+<p>Lets explore how we can combine strongly typed views and forms in Asp.Net MVC with some “Lambda-fu” to help us write refactoring friendly WatiN tests. </p>
+<p>The benefits we get is when we refactor controller actions, view data and user input our integration test will automatically be updated to reflect the changes. Another benefit is that you can write you integration tests in true TDD-style and let Resharper generate the code for you. ( Remember, Alt +&#160; Enter is your best friend!)</p>
+<p>Enough talk, time for some code!</p>
+<h4>Binding to controller actions</h4>
+<p>The idea here is to use lambda expressions to bind our tests to controller actions and then infer the Url from the class and method names of the controller. The following test demonstrates this</p></p>
+<div class="csharpcode">
+<pre class="alt">[Test]</pre>
+<pre><span class="kwrd">public</span> <span class="kwrd">void</span> Can_execute_action_with_arguments()</pre>
+<pre class="alt">{</pre>
+<pre>    var productsController = <span class="kwrd">new</span> ControllerProxy&lt;ProductsController&gt;(browser);</pre>
+<pre class="alt">&#160;</pre>
+<pre>    productsController.ExecuteAction(x =&gt; x.Edit(123));</pre>
+<pre class="alt">&#160;</pre>
+<pre>    browser.AssertWasCalled(b =&gt; b.GoTo(<span class="str"><a href="http://localhost/Products/Edit/123">http://localhost/Products/Edit/123</a></span>));</pre>
+<pre class="alt">}</pre>
+<p></div></p>
+<p>As you can see we create a “ControllerProxy” for the Asp.Net MVC controller called ProductsController and then executes the “Edit” action passing the parameter value “123”. The browser object that is passed to the proxy is the WatiN -&#160; IBrowser interface that abstracts the different supported browsers (IE and Firefox). This makes is easy to run the integration tests for both browsers.</p>
+<p>The code in controller proxy looks like this:</p>
+<div class="csharpcode"> 
+<pre class="alt"><span class="kwrd">public</span> ControllerProxy&lt;CONTROLLERTYPE&gt; ExecuteAction(Expression&lt;Func&lt;CONTROLLERTYPE, Object&gt;&gt; expression)</pre>
+<pre>{</pre>
+<pre class="alt">    var methodCall = (MethodCallExpression)expression.Body;</pre>
+<pre>    var url = BuildUrlFromControllerAction(methodCall.Method.Name);</pre>
+<pre class="alt">&#160;</pre>
+<pre>    <span class="kwrd">foreach</span> (var argument <span class="kwrd">in</span> methodCall.Arguments)</pre>
+<pre class="alt">        url += <span class="str">&quot;/&quot;</span> + argument;</pre>
+<pre>&#160;</pre>
+<pre class="alt">    browser.GoTo(url);</pre>
+<pre>&#160;</pre>
+<pre class="alt">    <span class="kwrd">return</span> <span class="kwrd">this</span>;</pre>
+<pre>}</pre>
+<p></div>
+<p>As you can see we generate the correct url from the controller name and the specified action. Then we append the action parameters and finally tell WatiN to browse the url.</p>
+<p>I wont bore you with the rest of the code but if you are interested it can be found <a href="http://code.google.com/p/fluentwatin/source/browse/#svn/trunk/src%3Fstate%3Dclosed">here</a>.</p>
+<h4>Validating view data</h4>
+<p>Ok, now that that we can execute controller actions in a strongly typed manner wouldn't it be nice if we could validate the resulting view (if of course the action results in a rendered view). This can be easily achieved if you use Asp:net MVC support for strongly typed views (if you don't, you really should! <a href="http://ayende.com/Blog/archive/2008/12/29/my-baseline-asp.net-mvc-modifications.aspx">Ayende shares my position in this matter</a> :)</p>
+<p>This test demonstrates how we can assert that the rendered view contains expected values.</p>
+<div class="csharpcode"> 
+<pre class="alt">[Test, ExpectedException(<span class="kwrd">typeof</span>(AssertionException))]</pre>
+<pre><span class="kwrd">public</span> <span class="kwrd">void</span> Enable_validation_of_view_data()</pre>
+<pre class="alt">{</pre>
+<pre>    var productsController = <span class="kwrd">new</span> ControllerProxy&lt;ProductsController&gt;(browser);</pre>
+<pre class="alt">&#160;</pre>
+<pre>    var mockTextBox = MockRepository.GenerateMock&lt;IElement&gt;();</pre>
+<pre class="alt">&#160;</pre>
+<pre>    browser.Stub(b =&gt; b.Element(<span class="str">&quot;Name&quot;</span>)).Return(mockTextBox);</pre>
+<pre class="alt">&#160;</pre>
+<pre>    mockTextBox.Stub(textbox =&gt; textbox.Text).Return(<span class="str">&quot;Not the name we expected&quot;</span>);</pre>
+<pre class="alt">&#160;</pre>
+<pre>    productsController.AssertViewData&lt;CreateViewModel&gt;(x=&gt;x.Name == <span class="str">&quot;Expected name&quot;</span>);</pre>
+<pre class="alt">}</pre>
+<p></div>
+<p>Here the call to “AssertViewData” binds to the ViewModel called “CreateViewModel” and then makes sure that the property value of “Name” is “Expected Name” (which in this test it’s not and a AssertionException is raised). This solution has a potential flaw in that is expects you to generate the html input control with the id “Name”. The way to solve this is to use a view engine or view helpers that allows you to bind your html controls directly the view model property. My personal favourite is <a href="http://lunaverse.wordpress.com/2008/11/24/mvcfluenthtml-fluent-html-interface-for-ms-mvc/">FluentHtml</a> which allows you to use he following syntax:</p>
+<div class="csharpcode"> 
+<pre class="alt">&lt;%= <span class="kwrd">this</span>.TextBox( x=&gt;x.Name) %&gt;</pre>
+<pre>&#160;</pre>
+<pre class="alt">instead of:</pre>
+<pre>&#160;</pre>
+<pre class="alt">&lt;%= Html.TextBox(<span class="str">&quot;Name&quot;</span>) %&gt;</pre>
+<p></div>
+<p>&#160;</p>
+<h4>User input and submitting forms</h4>
+<p>By utilizing Asp.Net MVC support for strongly typed user input we can add support for a “magic string free” way of inputting and submitting data using WatiN. Firsts lets look at a controller action that accepts strongly typed data</p>
+<div class="csharpcode"> 
+<pre class="alt">[AcceptVerbs(HttpVerbs.Post)]</pre>
+<pre><span class="kwrd">public</span> ActionResult Create(CreateProductForm userInput)</pre>
+<pre class="alt">{</pre>
+<p></div>
+<p>In this example “CreateProductForm” contains a “Name” and a “Price” property that the user inputs. When the form is submitted Asp.Net MVC’s model binders automatically binds the submitted data to the above properties. Let see how we can handle this scenario using our controller proxy (I talked about this in my previous <a href="http://andreasohlund.blogspot.com/2008/12/aspnet-mvc-jquery-true.html">post</a>)</p>
+<div class="csharpcode"> 
+<pre class="alt">[Test]</pre>
+<pre><span class="kwrd">public</span> <span class="kwrd">void</span> Can_submit_formdata()</pre>
+<pre class="alt">{</pre>
+<pre>    var productsController = <span class="kwrd">new</span> ControllerProxy&lt;ProductsController&gt;(browser);</pre>
+<pre class="alt">&#160;</pre>
+<pre>    var mockedTextBox = MockRepository.GenerateMock&lt;ITextField&gt;();</pre>
+<pre class="alt">&#160;</pre>
+<pre>    browser.Stub(e =&gt; e.Element(<span class="str">&quot;Name&quot;</span>)).Return(mockedTextBox);</pre>
+<pre class="alt">    browser.Stub(e =&gt; e.Element(<span class="str">&quot;Price&quot;</span>)).Return(mockedTextBox);</pre>
+<pre>&#160;</pre>
+<pre class="alt">    IForm mockedForm = MockDefaultForm();</pre>
+<pre>&#160;</pre>
+<pre class="alt">&#160;</pre>
+<pre>    productsController.SubmitForm&lt;CreateProductForm&gt;(form =&gt;</pre>
+<pre class="alt">                                                         {</pre>
+<pre>                                                             form.Name = <span class="str">&quot;Product name&quot;</span>;</pre>
+<pre class="alt">                                                             form.Price = 100.0;</pre>
+<pre>                                                         });</pre>
+<pre class="alt">&#160;</pre>
+<pre>    mockedTextBox.AssertWasCalled(x =&gt; x.Value = <span class="str">&quot;Product name&quot;</span>);</pre>
+<pre class="alt">    mockedTextBox.AssertWasCalled(x =&gt; x.Value = <span class="str">&quot;100&quot;</span>);</pre>
+<pre>    mockedForm.AssertWasCalled(x =&gt; x.Submit());</pre>
+<pre class="alt">}</pre>
+<p></div>
+<p>Behind the scenes we extract data from our “form” object and use WatiN to simulate the user input to the browser. And finally we submits the form.</p>
+<h4>Conclusion</h4>
+<p>Combining the above we can write strongly typed integration test for the creation of an article in an online cash register like this:</p>
+<div class="csharpcode"> 
+<pre class="alt">controller.ExecuteAction(x =&gt; x.CreateArticle())</pre>
+<pre>    .SubmitForm&lt;CreateArticleCommand&gt;(formData =&gt;</pre>
+<pre class="alt">                                          {</pre>
+<pre>                                              formData.Price = 100.0;</pre>
+<pre class="alt">                                              formData.Name = articleName;</pre>
+<pre>                                              formData.ArticleNumber = <span class="str">&quot;123123&quot;</span>;</pre>
+<pre class="alt">                                          })</pre>
+<pre>    .AssertViewData&lt;ViewArticleViewModel&gt;(viewData =&gt; viewData.Name == articleName);</pre>
+<p></div>
+<p>&#160;</p>
+<p>I hope this post will give you some ideas on how to use lambdas and the strongly typed way of programming Asp.Net MVC to help you write more robust and refactoring friendly integration test using WatiN. This technique will also work with other MVC frameworks such as <a href="http://code.google.com/p/fubumvc/">Fubu Mvc</a> etc. </p>
+<p>Source can be found <a href="http://code.google.com/p/fluentwatin/source/browse/#svn/trunk/src%3Fstate%3Dclosed">here</a> if you are interested. </p>
+<p>As always comments and suggestions are welcome!</p>

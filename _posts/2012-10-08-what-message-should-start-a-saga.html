@@ -1,0 +1,43 @@
+---
+layout: post
+title: What message should start a saga?
+date: 2012-10-08 21:14:56.000000000 +02:00
+categories:
+- Best practices
+- Messaging
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '877024716'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>One common mistake people do when building sagas is being to restrictive when it comes to defining the messages that are allowed to start a saga. NServiceBus allows you to have multiple messages start given saga for a very good reason.</p>
+<p>I've touched on this subject in a<a href="http://andreasohlund.net/2012/01/18/dont-assume-message-ordering/"> previous post</a> about ordering of messages. Lets revisit the underlying reason why ordering can't be assumed.</p>
+<h3>The network is reliable</h3>
+<p>As we all know this isn't really true and is indeed the <a href="http://en.wikipedia.org/wiki/Fallacies_of_Distributed_Computing">first fallacy of distributed computing</a>. This means that:</p>
+<blockquote><p>You can't assume <strong><span style="text-decoration: underline;">when</span> </strong>as message will arrive and even worse, you can't assume that a message <strong><span style="text-decoration: underline;">will arrive at all</span></strong>!</p></blockquote>
+<p>It might seem like we're stuck between a rock and a hard place but this is where sagas can come to our rescue. Sagas ability to serialize message processing across a correlated dimension and the way they enable us to issue compensating actions is just what we need to handle this situation. The tricky part is realizing that this problem even exists.</p>
+<h3>Things are not always what they appear</h3>
+<p>Our brains seems to be built to order things in the way they logically appear and that is what trip us up in these situations. Lets illustrate this with an example.</p>
+<p>Imagine a saga handling the shipment of a given order, the business rule is that we can ship when the order has been accepted (sales) and payed for (billing). This would lead us to a saga like this:</p>
+<p>[gist id=3853040]</p>
+<p>As we can see we start the saga for  OrderAccepted and when OrderBilled arrives we start our shipping process. All is good until we start getting bug reports from the business claiming that orders sometimes gets "stuck" without being shipped.</p>
+<p>After a grueling time looking at logs and audit messages a what seems to be a impossible scenario appears, the OrderBilled event seems to sometimes arrive before the OrderAccepted. Puzzled about this discovery we also overhear our OPS team talking about a faulty network card on one of the backend servers hosting our sales components. After some more digging it seems like the OrderAccepted event is been delayed when sent to the Shipping server due to that network card issue.</p>
+<p>Reasons for situations like this can be firewall issues, network issues, messages ending up in error queues, bugs etc. So while logically these messages should appear in a given order, you can't bill and order that isn't accepted, in a real life messaging scenario this logical ordering won't hold true. So looking back at our saga we can see that if OrderBilled arrives first no saga instance will be created and there for when the OrderAccepted arrives a new saga will be created and waiting forever since the OrderBilled has already been "processed". The fix is easy though, just have both messages start the saga by changing the <em>IHandleMessages</em> to <em>IAmStartedByMessages .</em> This will cause both messages create a new saga instance if needed and solve the issue for us.</p>
+<p>In this example we looked at messages (events) coming from 2 different services. But what about events from the same service, surely they will arrive in order?</p>
+<p>Unfortunately no, the same problem exists here as well and it's even harder to spot. Imagine adding the rule that we can't ship canceled orders. Even though OrderAccepted and OrderCanceled comes from the same server there is nothing to say that OrderCanceled will always arrive last. What if OrderAccepted fails to be processed and ends up in your error q for a few hours?</p>
+<h3>In closing</h3>
+<p>As we have seen messages that are expected to hit a existing saga isn't quite so common that you might think. I would go as far as to say that the <strong><span style="text-decoration: underline;">only</span> </strong>message can't start a saga is a message <span style="text-decoration: underline;">sent or initiated by the saga instance it self</span>, this is either timeouts set by the saga or messages being received as a reaction of a message sent by the saga it self. (request/response interactions)</p>
+<p>So go back and review your sagas, there are probably a few places where you need to start using <em>IAmStartedByMessages</em>!</p>
+<p>&nbsp;</p>

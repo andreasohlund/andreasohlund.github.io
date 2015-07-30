@@ -1,0 +1,39 @@
+---
+layout: post
+title: ">First impressions of SCRUM"
+date: 2008-10-23 22:09:00.000000000 +02:00
+categories:
+- SCRUM
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2008/10/first-impressions-of-scrum.html"
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>>
+<p>We are nearing the end of the first sprint of my first &quot;real&quot; <a href="http://en.wikipedia.org/wiki/Scrum_(development)">SCRUM -project</a> (we have used some agile practices in previous projects but this one is the first one run &quot;by the book&quot;) It's really fascinating to see how all the small &quot;tricks&quot; and practices used in SCRUM really can help to increase understanding, highlight problems within the team etc. </p>
+<p>I'd like to share some of the lessons we learned so far.</p>
+<p><strong>Lesson 1: Don't assume that everyone understands the scope of user stories</strong></p>
+<p>During our first sprint planning the team was estimating <a href="http://en.wikipedia.org/wiki/User_story">user stories</a> but we had a hard time reaching consensus about the size of the stories (we were estimating using <a href="http://www.planningpoker.com/">planning poker</a>). As it turned out the stories where poorly described (just a name) and our product owner had a hard time explaining the stories to the team. Fortunately one of the SCRUM &quot;tricks&quot; saved us, namely the:</p>
+<blockquote><p>&#160;<em>&quot;each story should contain a description on how it will be demonstrated at the sprint demo</em>&quot;-trick. </p>
+</blockquote>
+<p>It was amazing to realize how much that describing how a story should be demonstrated helped in clarifying to the team what it was all about. Just to give you an example think of the following story:</p>
+<p>As an <strong>administrator</strong> I want to <strong>add users</strong> so that people can <strong>get access to the system</strong></p>
+<p>Reading the story you might envision some shiny UI to add users, verifying user information etc. Does your vision change if I add:</p>
+<p>Steps to demo: <em>Run SQL-script to add user &quot;John Doe&quot; with password &quot;12345&quot;, make sure that the new user can log in using the specified credentials. </em></p>
+<p>Ok, that's what I thought! </p>
+<p>So make sure that you specify &quot;how to demo&quot; for your user stories!</p>
+<p><strong>Lesson 2: Done means DONE!</strong></p>
+<p>Now that we are nearing the end of the first sprint the practice of shoving a demo of the system for our customer really makes sure the stories to be demonstrated are really done! Traditionally the devs would report a feature as done and we would move on to new features. This would lead a increasing amount of hidden bugs that would accumulate during the project and surface during acceptance testing. Forcing us to demo new features continuously combined with the rule that all stories should be signed of by a &quot;tester&quot; before considered done will hopefully help us to find bugs early , improve quality and save us from nasty surprises during acceptance testing.</p>
+<p>Well, SCRUM looks promising so far! </p>
+<p>My colleague &#197;sa has also written some <a href="http://deliciousit.blogg.se/2008/october/scrum-forsta-dagen.html">thoughts</a> about the same project over at her <a href="http://deliciousit.blogg.se">blog</a> (in Swedish)</p>

@@ -1,0 +1,44 @@
+---
+layout: post
+title: Not all events are created equal
+date: 2011-05-05 19:52:45.000000000 +02:00
+categories:
+- DDD
+- EDA
+- SOA
+- SOA 2.0
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '299892139'
+  _wp_old_slug: ''
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p><img class="alignright" src="assets/declaration-of-independence.jpg" alt="" width="280" height="210" />No, this post has nothing to do with the <a href="http://en.wikipedia.org/wiki/All_men_are_created_equal" target="_blank">declaration of independence</a> but perhaps that we need to design our events with a little more independence in mind.</p>
+<p>Events denotes important things that has occurred in our business. These events are useful for things like keeping persistent view models updated in a CQRS architecture and as way to communicate between our SOA services, I would go as far so say that events should be the only way that services should interact with each other. The questions is should we use the same event for both of the above situations?  Keeping SRP in mind tells us that this might be a bad idea.</p>
+<p>To answer the question we need to dig a little deeper into both of the above scenarios</p>
+<p><strong>Using events to keep our read model in sync</strong></p>
+<p>CQRS is used to separate our writes from our reads in order to allow us to build optimal models for both sides separately. This means that we need a way to communicate every change that happens in our write side to our read side. The fact that we communicate things the has happened makes events a perfect fit for this. The read model is used to to display data to our users and those users usually have the ugly habit of wanting to see and tinker with every aspect of an entity. This means that the initial "created" event needs to carry all the fields that the user wants to see in order to populate the view model with it. This includes things like first name, last name, product description etc. Read models also need to display all the state changes happening in the write side and this leads to quite a large number of events of fine grained events carrying the updated data. The naming of those "update" type of events are important in order to convey the intent of the change. One good example is AddressCorrected vs. CustomerMoved.</p>
+<p>Let's imagine that we need to display a list of invoices to our users on our website and we use CQRS within our billing service to separate the writes from the reads. Sometimes our write side might be a COTS billing system. In order to feed the relevant data to our website in this scenario we would likely publish an event containing all relevant data for the invoice when it's been created. This is a common practice for all the events that occur when an entiry has been "created". In our example this would be things like InvoiceID, Amount, PO-Number, Link to PDF, DueDate etc.</p>
+<p>This "initial" event is then used by our denormalizers to create the invoice in our persistent view model updated, and sub sequent events are used keep the read model in sync.</p>
+<p>Given that CQRS is only used within a bounded context the recipients of this event operatates within the same service boundary as the publisher. The contract for this type of event tends to be quite volatile since every change in the data need for user interfaces changes quite frequently.</p>
+<p><strong>Using events for communicating between business services/bounded contexts</strong></p>
+<p>When communicating between well designed services the only data that is relevant on the is usually some kind of identifier. This is further enforced by the guideline that the only data that is duplicated between services is ID's any other attributes on the event is only used to update data owned by the receiving service.</p>
+<p>Continuing the example above lets imagine that our customer care service is interested in how much business we have with each of our customers in order to upgrade our top customers to VIP status. In this scenario customer care would only need the CustomerID and the amount that we billed the customer. Given that customer care is a separate service from billing the event needs to cross service boundaries. The fact that other business services might be depending on this event makes versioning of the event crucial in order to not cause troubles.</p>
+<p><strong>Internal and External events</strong></p>
+<p>What looked like the same event turned out to be quite different both in terms of the data it carries and the subscribers that are interested in it. I prefer to call the events that is used with in a service "Internal" and the ones that flow between service "External". Another key difference is that the SLA's between the events usually differs. The internal event usually have a tight SLA due to the fact that we need to keep our data in our UI's updated. In contrast in might be fine for external events to be delayed for an hour or so without impacting our business. In our example above it might be fine that customer care get's notified about billed customer a couple of hours later.</p>
+<p>The external event is always a subset of it's internal counterpart and in OO terms this would translate to</p>
+<p><em>InternalEvent </em><em><strong>inherits </strong></em><em>ExternalEvent</em></p>
+<p>Given that both events are variations of the same business event they should be published as a unit and this is hopefully taken care of by the bus infrastructure you're using. Usually this is done by publishing the internal event and have your bus use <a href="http://www.udidahan.com/2011/01/13/polymorphism-and-messaging/" target="_blank">polymorphic dispatch</a> to invoke the correct handler at the different subscribers.</p>
+<p><strong>In closing</strong></p>
+<p>Designing your events correctly is not an easy task but separating the parts that are internal from those that are external helps breaking the problem down into smaller pieces. External events usually only contain ID's and if you have other attributes on them this might be a smell that you got the responsibilities of your business services wrong. Using this distinction should not incur any extra labor for you as a developer and in an upcoming post I'll demonstrates how NServiceBus will help out in this area.</p>

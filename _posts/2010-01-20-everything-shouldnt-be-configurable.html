@@ -1,0 +1,57 @@
+---
+layout: post
+title: ">Everything shouldn't be configurable!"
+date: 2010-01-20 21:58:00.000000000 +01:00
+categories:
+- Convention over configuration
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '299892718'
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2010/01/everything-shouldn-be-configurable.html"
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>>
+<p style="clear: both">App configs tend to get bloated with all kinds of configuration settings that are not likely to change in production. Those huge files are a pain to read and it's easy to get something wrong causing the whole app to fail. Another thing to take into account is that everything in the config file need to be well documented so that the sysadmins know what to change and when.</p>
+<p style="clear: both"><strong>So what am I getting at?</strong></p>
+<p style="clear: both">Think twice about what you put in you app.config. A lot of things can and should be configured in code instead. You as a developer are in charge of the source code and all decisions that are yours or things that shouldn't be modified in production should go there. This results in configurations that are:<br />• More readable to both developers and sysadmins<br />• Easier to modify when the need arise<br />• Easier to document for developers<br />• Only contains setting that are eligible for modification in production</p>
+<p style="clear: both"><strong>What should go in the app.config then?</strong></p>
+<p style="clear: both">I found it useful to ask myself the following question when deciding what to make configurable:</p>
+<p style="clear: both">
+<blockquote><p>Is this something that our sysadmin should be allowed to change when the system is running in production?</p></blockquote>
+<p style="clear: both">If you can answer the above question with a yes then it's most likely a good candidate for your app.config. If not, put in in the code!</p>
+<p style="clear: both"><strong>Logging - an example</strong></p>
+<p style="clear: both">Let's using logging as an example on how to apply this rule. Using log4net logging is usually configured by the following syntax in the app.config</p>
+<pre class="xml" name="code">&lt;log4net&gt;<br />&lt;appender name="RollingLogFileAppender" type="log4net.Appender.RollingFileAppender"&gt;<br /> &lt;file value="whatever.log"&gt;<br /> &lt;/file&gt;&lt;appendtofile value="true"&gt;<br /> &lt;/appendtofile&gt;&lt;rollingstyle value="Composite"&gt;<br /> &lt;/rollingstyle&gt;&lt;datepattern value="yyyyMMdd"&gt;<br /> &lt;/datepattern&gt;&lt;maxsizerollbackups value="100"&gt;<br /> &lt;/maxsizerollbackups&gt;&lt;maximumfilesize value="10MB"&gt;<br /> &lt;layout type="log4net.Layout.PatternLayout"&gt;<br />  &lt;conversionpattern value="%date [%thread] %-5level %logger [%property{NDC}] - %message%newline"&gt;<br /> &lt;/conversionpattern&gt;&lt;/layout&gt;<br />&lt;/maximumfilesize&gt;&lt;/appender&gt;<br /><br />&lt;root&gt;<br /> &lt;level value="DEBUG"&gt;<br /> &lt;/level&gt;&lt;appender-ref ref="RollingLogFileAppender"&gt;<br />&lt;/appender-ref&gt;&lt;/root&gt;<br />&lt;/log4net&gt;<br /></pre>
+<p style="clear: both">As you can see we allow configuration of:</p>
+<ol style="clear: both">
+<li>What appender to use, a rolling file appender in this case</li>
+<li>Where the log output should be stored</li>
+<li>That the appender should create a new file for each 10 MB of logs</li>
+<li>That the appender should keep the most recent 100 files</li>
+<li>The logging threshold</li>
+<li>The layout if each row in the log output</li>
+</ol>
+<p style="clear: both">Applying the control question to the above statements reveals that the only thing that make sense to change on the fly in production is 2 and 5.</p>
+<p style="clear: both">You might argue that it's good to allow for adding new appenders without redeploying code. But come on, how often do you get in a situation where you need to change that on short notice in a production environment? Your CM procedures should allow you to patch and redeploy quickly anyway.</p>
+<p style="clear: both">What about settings that should go into the code that might vary between the different environments during development, test and production? This should be handled by <a href="http://andreasohlund.blogspot.com/2009/09/building-lifecycle-aware-applications.html">making your application lifecycle aware</a>.</p>
+<p style="clear: both">By <a href="http://nservicebus.svn.sourceforge.net/viewvc/nservicebus/trunk/src/hosting/NServiceBus.Hosting.Windows/LoggingHandlers/ProductionLoggingHandler.cs?view=markup">configuring logging in code</a> you can make sure that only the relevant settings are exposed to your sysadmin. By doing this we end up with the following config. Much cleaner don't you think?</p>
+<pre name="code" class="xml"><br />&lt;appsettings&gt;<br /> &lt;add key="Logging.Threshold" value="INFO"/&gt; <br /> &lt;add key="Logging.OutputDirectory" value="c:/logs"/&gt;<br />&lt;/appsettings&gt; <br /></pre>
+<p style="clear: both"><strong>The icing on the cake</strong><br />Let's take this approach on step further by applying some convention over configuration in order to totally remove the need for logging configuration for normal production operations. This is easily done by defaulting the threshold to WARN and the output directory to either the current working directory or ./logs. If the admin doesn't like this he can always override as he likes. This gives us the following of benefits</p>
+<ul style="clear: both">
+<li>Forgetting to configure logging will result in the default settings beeing used.</li>
+<li>No need to have your deployment scripts modify the settings when you move between environments</li>
+<li>Less risk for misconfiguration</li>
+<li>Cleaner and more readable config files</li>
+</ul>
+<p style="clear: both">So next time you add something to you config file consider configuring it in code instead!</p>

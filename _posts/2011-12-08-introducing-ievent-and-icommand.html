@@ -1,0 +1,42 @@
+---
+layout: post
+title: Introducing IEvent and ICommand
+date: 2011-12-08 14:09:58.000000000 +01:00
+categories:
+- Best practices
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '497594730'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>One of the new features in NServiceBus 3.0 is the introduction of two new message interfaces, IEvent and ICommand. The purpose is to capture more of the intent of the messages that you as a user are defining. This will help NServiceBus to enforce messaging best practices and stop you from doing crazy things:)</p>
+<p><span class="Apple-style-span" style="font-size: 20px; font-weight: bold;">Messages implementing ICommand</span></p>
+<ul>
+<li>Is not allowed to be published since all commands should have one logical owner and should be sent to the endpoint responsible for processing</li>
+<li>Can't be subscribed and unsubscribed to</li>
+<li>Can't implement IEvent</li>
+</ul>
+<div>
+<h2>Messages implementing IEvent</h2>
+<ul>
+<li>Can be published</li>
+<li>Can be subscribed and unsubscribed to</li>
+<li>Can't be sent using Bus.Send() since all events should be Published</li>
+<li>Can't implement ICommand</li>
+<li>Can't be sent using the gateway, ie bus.SendToSites()</li>
+</ul>
+<div>So please go ahead and use those additional interfaces if you wan't NServiceBus to help you fall into the pit of success.</div>
+<div>Please add a comment if you have for additional checks that we should do!</div>
+</div>

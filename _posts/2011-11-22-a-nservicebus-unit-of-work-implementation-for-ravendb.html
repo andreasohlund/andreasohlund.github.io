@@ -1,0 +1,49 @@
+---
+layout: post
+title: A NServiceBus Unit Of Work implementation for RavenDB
+date: 2011-11-22 13:47:58.000000000 +01:00
+categories:
+- NServiceBus
+- RavenDB
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '480258277'
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>In my last post I introduced the <a href="http://andreasohlund.net/2011/11/21/unit-of-work-in-nservicebus-3-0/">new UoW support in NServiceBus 3.0.</a> In this post I'll show you how to use it to create a UoW implementation for RavenDB. Ayende has already blogged <a href="http://ayende.com/blog/71681/ravendb-session-management-with-nservicebus">about one way to do it</a> but now there is a better way.</p>
+<p><strong>Sharing the session</strong></p>
+<p>The first thing we need to take care of is sharing the session between our message handler(s) and the actual unit of work implementation. We could do this using thread static but that has some issues that I have <a href="http://andreasohlund.net/2010/03/25/thread-static-caching-in-nservicebus/">mentioned before</a>.</p>
+<p>Instead we will use the new <a href="http://andreasohlund.net/2010/03/25/thread-static-caching-in-nservicebus/">support for child containers  in NServiceBus 3.0</a>. This means that all dependencies configured as single call effectively becomes static within the context of one transport message and this is exactly what we need.</p>
+<p>To resolve a Raven document session from the container we'll add the following configuration (I'm using StructureMap but any one of the other containers except Spring and Unity would work)</p>
+<p><script src="https://gist.github.com/1382456.js?file=gistfile1.cs"></script> The above code tells the container to create a new IDocumentSession using the lambda specified and the fact that all message processing is done using a child container means that all message handlers processing the message will get the same session instance.</p>
+<p><strong>Implementing the Unit Of Work</strong></p>
+<p>In RavenDB you need to explicitly call IDocumentSession.SaveChanges() in order to persist your data to the database. So to avoid making this call in all our handlers we add a unit of work implementation that takes care of it.  This saves typing and makes sure that our developers won't introduce bugs by forgetting to make the call.<script src="https://gist.github.com/1382470.js?file=gistfile1.cs"></script></p>
+<p>Note that we're taking a dependency on the IDocumentSession and given that the UoW is resolved from the same child container as the handlers we'll get the same session instance. Raven doesn't need any special setup so the only thing we need do is call SaveChanges <strong>if</strong> End() is called and no exception occurred.</p>
+<p>The final thing we have to do is make NServiceBus use our UoW. We do this by configuring it in the container so that NServiceBus will find it and use it:</p>
+<p><script src="https://gist.github.com/1382473.js?file=gistfile1.cs"></script></p>
+<p>&nbsp;</p>
+<p><strong>What about disposing the session?'</strong></p>
+<p>Again we're rescued by the child containers and the fact that all single call components that where created in the child container is getting disposed by the main container when the child container is disposed. NServiceBus is disposing the child container when the processing of a transport message is complete and this has the effect that any object implementing IDisposable will be disposed. Luckily for us <a href="https://github.com/ravendb/ravendb/blob/master/Raven.Client.Lightweight/IDocumentSession.cs">IDocumentSession</a> does just this!</p>
+<p>&nbsp;</p>
+<p>With this in place we can create very clean message handlers  that interact with Raven:</p>
+<p><script src="https://gist.github.com/1385596.js?file=gistfile1.cs"></script><br />
+&nbsp;</p>
+<p><strong>Working code please...</strong></p>
+<p>A <a href="https://github.com/andreasohlund/Blog/tree/master/RavenUnitOfWork">working sample</a> can be found over at <a href="https://github.com/andreasohlund/">my github account</a>.</p>
+<ul>
+<li>I'm using the excellent NuGetPowerTools so the solution will automatically download the required dependencies.</li>
+<li>Make sure to start the sample as Administrator in order to let NServiceBus create the queues for you!</li>
+<li>The sample assumes that you have a RavenDB at http://localhost:8080</li>
+</ul>
+<p>Any feedback is much appreciated!</p>

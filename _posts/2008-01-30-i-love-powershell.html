@@ -1,0 +1,36 @@
+---
+layout: post
+title: ">I love Powershell!"
+date: 2008-01-30 18:33:00.000000000 +01:00
+categories:
+- Biztalk
+- Powershell
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2008/01/i-love-powershell.html"
+  dsq_thread_id: '299892602'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>>
+<p>I'm finally beginning to understand why those guys with strange T-shirts love Linux/Unix: </p>
+<p><strong>the ability to script everything <u>easily</u></strong></p>
+<p>Well for us windows boys scripting has been painful at best. That has all changed with Powershell. Here's the proof:</p>
+<p>Consider the task of stopping and unenlisting Biztalk orchestrations. Before this required skills in black magic and a big portion of luck. </p>
+<p>Here's the Powershell-script to do it:</p>
+<p>function StopAndUnEnlist-Orchestration($orch)    <br />{     <br />&#160;&#160;&#160;&#160; if ($orch.OrchestrationStatus -eq 4 )     <br />&#160;&#160;&#160;&#160;&#160;&#160; {     <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; write-host &quot;Stopping orchestration:&quot; $orch.Name     <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160; $orch.Stop(2,2)     <br />&#160;&#160;&#160; }     <br />&#160;&#160;&#160; if ($orch.OrchestrationStatus -gt 2)     <br />&#160;&#160;&#160;&#160;&#160;&#160; {     <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; write-host &quot;UnEnlisting orchestration:&quot; $orch.Name     <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160; $orch.UnEnlist(2)     <br />&#160;&#160;&#160; }     <br />} </p>
+<p>function Get-Orchestration($Name=&quot;%&quot;, $ComputerName =&quot;.&quot;)   <br />{    <br />&#160;&#160;&#160; Get-WmiObject -ComputerName $ComputerName -class MSBTS_Orchestration -namespace 'root\MicrosoftBizTalkServer' -Filter &quot;Name like '$Name'&quot;    <br />} </p>
+<p>&#160;</p>
+<p>#stop orchestrations    <br />Get-Orchestration(&quot;Contoso%&quot;) | %{ Stop-Orchestration($_) }</p>
+<p>&#160;</p>
+<p>Conclusion: I love Powershell!!</p>

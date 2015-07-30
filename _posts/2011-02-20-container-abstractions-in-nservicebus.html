@@ -1,0 +1,39 @@
+---
+layout: post
+title: Container abstractions in NServiceBus
+date: 2011-02-20 15:13:42.000000000 +01:00
+categories:
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _wp_old_slug: ''
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p style="clear: both"><a href="http://andreasohlund.net/about/#comment-112">Joel asked me</a> how we use containers in NServiceBus and the answer turned into this blog post.</p>
+<p style="clear: both">Container usage in a framework like NServiceBus can be divided into two main categories, configuring components and later building them. Let's start with the easy one.</p>
+<p style="clear: both"><strong>Building components from the underlying container</strong><br />To enable us to swap containers in a seamless fashion we need to abstract the building of components into an interface. Meet the IBuilder interface:</p>
+<p style="clear: both"><span style="  display: inline; float: left; margin: 0 10px 10px 0;"><script src="https://gist.github.com/832837.js"> </script></span><br style="clear: both" />The interface gives us the ability to build one component of a certain type and also to build all components of a given type. The one that needs some more explanation is the "CreateChildBuilder" method. This enables us to create <a href="http://andreasohlund.net/2010/10/12/support-for-child-containers-in-nservicebus/" title="">child containers</a> for each transport message that arrives and with that the ability to scope components for the duration of the processing of that transport message. </p>
+<p style="clear: both">There isn't that many ways to build a component so this abstraction gives us all the power we need without loosing any functionality from the different containers. The fact that regular users never should build components manually when using NServiceBus makes this even more straight forward since the framework it self is our target audience. The same can not be said when it comes to configuring the components.</p>
+<p style="clear: both"><strong>Configuring components in the container</strong></p>
+<p style="clear: both">When looking at different containers the main difference between them is how you configure them. This makes it tricky to create an abstraction that would make them all justice. Another thing that complicates things is that both external users and the framework it self needs to configure components. NServiceBus approach to this is to create a minimal abstracting that enables the framework to configure what we need but nothing more. This will certainly not be good enough for power users and the guideline for them is to configure their container of choice using its native configuration API. We then enable them to pass the configured container to NServiceBus which then will use that container when resolving components. This enable us to support all the different containers without putting to much limitations on them.</p>
+<p style="clear: both">The abstraction that NServiceBus uses internally is defined by the following interface:</p>
+<p style="clear: both"><span style="  display: inline; float: left; margin: 0 10px 10px 0;"><script src="https://gist.github.com/834297.js"> </script></span><br style="clear: both" />As we can see the interface allows us to register components with a type and a lifecycle, configure properties on the registered components and ask if a particular component has been registered. The life cycles that we support are:</p>
+<p style="clear: both"><span style="  display: inline; float: left; margin: 0 10px 10px 0;"><script src="https://gist.github.com/834307.js"> </script></span><br style="clear: both" />Nothing fancy here but it gets the job done. I know that there are some attempts to create a one size fits all abstraction for container configuration where <a href="https://github.com/MarcusTheBold/Siege">Siege</a> is one of them. I can't see any huge benefits since configuration is one of the major things that differentiates containers so forcing them behind a common interface is IMO a bad idea.</p>
+<p style="clear: both">Some trivia:
+<ul style="clear: both">
+<li>Supported containers in NServiceBus are: Castle, Spring, Ninject, Autofac, Unity, StructureMap</li>
+<li>The default container that comes merged with NServiceBus is Autofac</li>
+</ul>
+<p style="clear: both"> Hopefully this answers you question Joel!</p>
+<p style="clear: both">
+<p><br class="final-break" style="clear: both" /></p>

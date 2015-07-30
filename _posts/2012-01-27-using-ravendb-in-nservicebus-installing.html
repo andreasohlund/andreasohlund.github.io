@@ -1,0 +1,44 @@
+---
+layout: post
+title: Using RavenDB in NServiceBus - Installing
+date: 2012-01-27 08:00:01.000000000 +01:00
+categories:
+- NServiceBus
+- RavenDB
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '554217704'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>The default persistence in NServiceBus is as of version 3.0 RavenDB. The NServiceBus license permits the use of RavenDB for the storage need of your endpoint. This only includes NServiceBus related data like sagas, subscriptions etc. If you are storing application specific data in Raven you need to purchase a separate license.</p>
+<p>If you plan to use the default storage you need to make sure that you have a Raven server running that your endpoint can connect to. There is two ways to set this up:</p>
+<ol>
+<li><a href="http://ravendb.net/download">Download</a> and install RavenDB your self</li>
+<li>Let NServiceBus do it for you</li>
+</ol>
+<div>Use #1 if you're already using raven or if you have other specific requirements for the installation.</div>
+<h3>#2 Auto installation of RavenDB</h3>
+<p>RavenDB is included with the NServiceBus binaries (not ilmerged) and we have a <a href="http://andreasohlund.net/2012/01/26/installers-in-nservicebus-3-0/">infrastructure installer</a> that will make sure that Raven is installed on the local machine when the installers are <a href="http://andreasohlund.net/2012/01/26/installers-in-nservicebus-3-0/">invoked</a>.</p>
+<p>The install is only performed if the following is true:</p>
+<ol>
+<li>Raven persistence is configured for the endpoint</li>
+<li>A custom connection string is not specified by the user</li>
+<li>The current endpoint has no master node specified</li>
+<li>Port 8080 is available</li>
+<li>Raven is not already installed</li>
+<li>The install is done using the explicit /installInfrastructure</li>
+</ol>
+<div>#3 deserves a little more explanation. Having a master node defined tells NServiceBus that all data will be stored on the that server instead. This means that we expect the Raven server to be running on that remote machine and not the local machine where you're running the install.</div>
+<div>For instructions on how to administrate and operate a Raven server please see the documentation for RavenDB -  <a href="http://ravendb.net/docs/server/administration">http://ravendb.net/docs/server/administration</a></div>
+<div>That is all there is to it!</div>

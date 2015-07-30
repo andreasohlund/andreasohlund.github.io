@@ -1,0 +1,37 @@
+---
+layout: post
+title: Errorhandling in a message oriented world
+date: 2010-03-15 10:58:00.000000000 +01:00
+categories:
+- Errorhandling
+- Messaging
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '299892731'
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2010/03/errorhandling-in-message-oriented-world.html"
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>The way that faults are handled in message based applications is a bit different compared to more traditionally designed systems. Let's take a closer look at those differences and how you can use them to your advantage.</p>
+<p style="clear: both;"><strong>Messages can be replayed</strong></p>
+<p>When problems do occur in a messaging world the message that caused the problem isn't lost in some log file or as a error message presented to the user. Instead the offending message plus exception information is saved to some kind of "failed messages store". This store can be a special purpose queue, database , whatever. What makes this interesting is the fact that those failed messages can be put back into their original queue and thus be retried. If we compare this to a more traditional application where the an exception gets logged to a log file this is a huge difference. There is no way, well no easy way at least , to act on the that logged information in order to retry the failed business transaction. Even if we could retry we still have problems because we can't know if the user has retried him self or just left in anger.</p>
+<p style="clear: both;"><strong>Assume that things will go well</strong></p>
+<p>Messaging leads you to designing systems that lets users of the hook with a "thanks for your input, we'll get back to you later if something fails". Not having users/other systems wait for the outcome of their commands gives us a crucial window of time in which we can detect problems and try to correct then. The amount of time is of course depending on the specific business scenario at hand but is usually long enough to allow for administrative personnel to take action. One example would be an order website that ends a customer shopping action by sending an <em>SubmitOrder</em> message and telling the user that they'll get an email confirmation at a later time. This will buy you time to handle exceptions that might occur when trying to finalize the order.</p>
+<p style="clear: both;"><strong>Correction of errors</strong></p>
+<p>Given this ability to actually correct errors without disturbing our users is of course great but won't come for free. We have to plan, design and code the part of our application that deals with resubmission of messages, editing of messages and when everything else fails manually updating business data for messages that might be "un-replayable". This often boils down to some kind of light weight case management system where administrators monitor the failed messages store and take appropriate actions when exception do occur. This also gives us the ability to automatically handle certain "well known" exceptions that might occur frequently because of bugs or other problems with our system. An example of this could be a db-server that goes offline and there by causing messages to fail. Most messaging frameworks has retry functionality that takes care about temporary problems like deadlocks etc but that can only help to some extent. Application errors and longer periods of unavailability for key parts of your application will sooner or later cause messages to end up in your failed message store.</p>
+<p style="clear: both;"><strong>But why can't the framework keep on retrying forever?</strong></p>
+<p>This solution might look attractive at first glance but the problem is that longer periods of retries can cause serious performance issues when large amounts of messages are retried and there by causing severe cpu churn. Another issue is that for this to work we'd have to come up with a 100% accurate way of detecting messages that fail because of temporary problems and those that will never succeed. If not, we might risk having messages with invalid data being retried forever instead of going to our failed message store where they can handled by our administrators. So the bottom line is that automatic retries is only there to help with temporary problems that exists for short periods of time in your system, other issues is yours to handle.</p>
+<p style="clear: both;"><strong>In closing</strong></p>
+<p style="clear: both;">What all this gives us is a chance to let the business people decide what actions to take when things go wrong instead of giving users an error page to look at. This also gives back office personnel a controlled way of handling faults without having to rely on scraping data from log files. An last but not least this is a huge win in for our users.</p>
+<p><br class="final-break" style="clear: both;" /></p>

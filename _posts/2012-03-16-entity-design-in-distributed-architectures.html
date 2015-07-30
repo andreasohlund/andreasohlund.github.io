@@ -1,0 +1,29 @@
+---
+layout: post
+title: Entity design in distributed architectures
+date: 2012-03-16 11:35:38.000000000 +01:00
+categories:
+- SOA
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '613076206'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>In my<a href="http://andreasohlund.net/2012/02/21/talk-putting-your-events-on-a-diet/"> talk about event design in service oriented architectures</a> I dicussed how you should try to design your events so that they would only carry Id's across service boundaries. Instead you would use use commands, which always are internal to a service, to store what ever data you need for each particular service and use the event to synchronize status changes across services. In essence this means that the only thing that is shared between services is the <strong><span style="text-decoration: underline;">ID</span></strong>. This obviously also relates to how you design you entities. I'm not going into details here because Ayende has posted two excellent post on this subject. So please head over to his blog and read them:</p>
+<p><a href="http://ayende.com/blog/153703/there-ainrsquo-t-no-such-thing-the-definitive-entity-definition">http://ayende.com/blog/153703/there-ainrsquo-t-no-such-thing-the-definitive-entity-definition</a></p>
+<p><a href="http://ayende.com/blog/153704/composite-entities">http://ayende.com/blog/153704/composite-entities</a></p>
+<p>As you see avoiding logical coupling between both events and entities is one of the most important things to think about when designing distributed systems that you don't expect to rewrite from scratch every other year.</p>
+<p>Finally this also shows why trying to design a <a href="http://www.soapatterns.org/canonical_schema.php">"canonical data model" for your entire system</a> is such a bad idea. Doing this will send you straight down the road of failure.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>

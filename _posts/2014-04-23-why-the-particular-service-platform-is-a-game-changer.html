@@ -1,0 +1,77 @@
+---
+layout: post
+title: Why the Particular Service Platform is a game changer
+date: 2014-04-23 14:07:39.000000000 +02:00
+categories:
+- Particular Service Platform
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '2632961440'
+  _wp_old_slug: the-particular-service-platform
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: 
+  options: {}
+---
+<p>It's been cooking for a while but last week we released the first version of the Particular Service Platform. I truly believe this Platform will be a game changer in terms of how you build, deploy and run your distributed systems going forwards. The core is still the same robust <a href="http://particular.net/NServiceBus">NServiceBus</a> that seen production usage for the last 6-7 years. The new additions include <a href="http://particular.net/ServiceMatrix">ServiceMatrix</a> that will help you design of your solution. <a href="http://particular.net/ServiceInsight">ServiceInsight</a> will help you visualize message flows and what's even cooler, you can now see the state changes of your sagas visually. Trust me developing and debugging sagas has never been easier!</p>
+<p>Last but not least we have <a href="http://particular.net/ServicePulse">ServicePulse</a><span style="text-decoration: underline;">! </span>I'm really exited to finally be able to provide a tool for devops built from the ground up and tailored to make it as intuitive as possible for you to make sure your distributed components are up and running, delivering the business value.</p>
+<p>Enough of me talking here is an <a href="http://bit.ly/platformOverview">amazing video</a> showing you all this in action:</p>
+<p><a class="wistia-popover[height=608,playerColor=00a3c4,width=1080]" href="http://fast.wistia.net/embed/iframe/8ju7eemmdh?popover=true"><img src="assets/ff6eb27bcc109ca4241ef62408c91a2e36bf860b.jpg?image_play_button=true&amp;image_play_button_color=00a3c4e0&amp;image_crop_resized=500x281" alt="" /></a></p>
+<p>&nbsp;</p>
+<p>While the new apps in the Platform get a lot of attention I want to take this post in another direction and focus on a few other areas and tools that help us make sure that we can deliver on our promises to be the best Service Platform for .Net.</p>
+<h2>Developer experience</h2>
+<p>Getting quickly up to speed developing platform solutions with a minimum amount of hassle has always been one of our top priorities and we're continuing to invest in this area. With this release we introduce our new Platform Installer (PI) which will help you get your machine ready with all the tools and infrastructure needed to build solutions on top of our platform.</p>
+<p>Since we're developers our self we decided to take the PI in a slightly different direction compared to your traditional installer. We do this by leaning heavily on the <a href="http://chocolatey.org/">Chocolatey package manager</a>. This means that everything we help you install on your machine including queueing systems, storages, tools and of course our core apps like ServicePulse, ServiceInsight and ServiceMatrix will also be available to install via the powershell commands that Chocolatey provides. This gives us a robust and future proof infrastructure as our backbone and for you as a developer a way for you to quickly pave new machines by using tools like <a href="http://boxstarter.org/">Boxstarter</a>.</p>
+<p>Not using a package manager? Please give it a try, I promise it will change the way you approach installing things on your machine!</p>
+<p>Just click our<a href="http://particular.net/downloads"> download link</a> to take it for a spin!</p>
+<h2> Documentation by developers for developers</h2>
+<p>We've heard your feedback loud and clear and indeed we have fallen short at providing you with high quality documentation guiding you how to build and run your solutions. While that won't change overnight we're definitely giving it our best shot. To make adding and updating documentation as easy as possible we decided to create a new documentation platform from the ground up. And since we're developers and our target audience is mostly developers the choice of platform was easy - GitHub.</p>
+<p>All documentation is now stored as markdown in a github repository and rendered continuously to our new developer portal <a href="http://docs.particular.net/">docs.particular.net</a>. This means that updating doco is just a commit + push away which is pretty much as easy as it gets. For you as a user this means that, with a single click on the “Improve this doco” button found on each page, you can send us a pull request if you spot any error or needed additions. We love contributions and we’ll keep the swag coming your way to show our appreciation if you decide to chime in!</p>
+<p>While contributions are nice we're fully committed to creating the best documentation out there a few months back we created an entire team whose sole purpose is to provide guidance and documentation. This will help make sure that our doco is constantly improved and kept up to date as we evolve our platform going forwards.</p>
+<p>Go and see for yourself:</p>
+<p><a href="http://docs.particular.net/">http://docs.particular.net/</a></p>
+<h2>Backwards compatibility FTW</h2>
+<p>Continuously delivering a platform on which customers build and run their businesses is not a challenge to be taken lightly. One of the most important things for us is to make sure that you can upgrade your systems endpoint by endpoint without incurring downtime. Failure to deliver in this area is a obviously a non starter if you claim to be a platform for building distributed systems. While we've always been proud to be leaders <span style="font-size: 13px;">in this area we've taken steps this past year that have taken us to a completely different level. </span></p>
+<p><span style="font-size: 13px;">Before we dig into that lets define backwards compatibility. First we have wire-compatibility, this means that messages we send over the "wire" needs to be compatible across different versions of NServiceBus. If we fail here you won't be able to update your versions of NServiceBus on a per endpoint basis. This leads to big bang upgrade with massive risk and guaranteed downtime. In short, not acceptable! </span></p>
+<p>To make sure that we don't drop the ball in this area we have a fully automated suite of tests that makes sure each version starting with NServiceBus 3.3 is able to send to and receive from all other versions of NServiceBus.</p>
+<p>Next up is data-compatibility and by that we mean the data that is stored by the framework itself on a per endpoint basis. This includes subscriptions, timeouts, saga data etc. While less critical than wire compatibility breaking changes here cause unneeded friction when upgrading so we make sure that if we are forced to introduce breaking changes they will only happen when we move from one major version to another.</p>
+<p>We check this before each release to make sure that new versions are able to consume data stored by previous version.</p>
+<p>Finally we have api compatibility which means the api that you as a developer code against. We follow <a href="http://semver.org/">SemVer 2.0</a> and it stipulates that breaking changes are only allowed in new major versions. At this stage we use strict code reviews to enforce this but rules that need to be enforced manually are bound to be broken. To remedy this we plan to make this <a href="https://github.com/JakeGinnivan/ApiApprover">verification</a> a automated step as part of all our builds thereby making it impossible for us to make breaking changes to our public api.<span style="font-size: 13px;"> </span></p>
+<h2>Fine grained repositories rock!</h2>
+<p><a href="http://andreasohlund.net/2013/10/07/the-pain-and-suffering-of-large-source-code-repositories/">But man did we have to work hard to get there!</a> As we support more and more queuing technologies, storages, containers etc. it became clear to us that dumping all code into a single repository wouldn't cut it. Since we are heavily automated we aim for each commit to be a potential release and this breaks down completely when you mix things with different release cycles on the same repository.</p>
+<blockquote><p><span style="font-size: 13px;">User: “So what’s new in 4.0.3?”</span></p>
+<p>Us: “We updated to RabbitMQ 2.1″</p>
+<p>User: “But I’m using MSMQ?”</p>
+<p>Us: "Uhm..."</p></blockquote>
+<p>In order to keep the signal to noise ratio regarding releases to a bare minimum for you as a user we realized that we need to split things out to separate repositories. We're now at around 40 repositories and counting...</p>
+<p>This move made it painfully clear to us that the tooling needed for operations at this scale just wasn't there so we had to build our own/contribute to exiting ones:</p>
+<ul>
+<li>We use and contribute to <a href="http://darthfubumvc.github.io/ripple/">ripple</a> in order to manage our dependencies across repositories</li>
+<li>We built <a href="https://github.com/Particular/GitVersion/">GitVersion</a> to automatically version our binaries based Git commits. Special thanks to <a href="http://jake.ginnivan.net/">Jake Ginnivan</a> who has been co managing the project with us.</li>
+<li>We built <a href="https://github.com/Particular/SyncOMatic">SyncOMatic</a> to keep our repositories in sync</li>
+<li>We built <a href="https://github.com/Particular/GitHubReleaseNotes">GitHubReleaseNotes</a> to automate the creation of our release notes</li>
+</ul>
+<p>While this can be seen as a drawback now that we've made the investment we can release much faster and with better quality than ever before making it possible to hotfix and release new versions of our software in a much more timely maner to make sure that you're never stuck. At this time we're put out on average 2-3 new releases per week and a highly automated and repeatable way.</p>
+<h2>Testing, testing, testing...</h2>
+<p>Testing that distributed communication works as expected is tricky. Mix that with a wide range of queuing systems, databases, containers and operating systems it becomes pretty darn hard. Oh , did I mention that there are different versions available of all those moving pieces?</p>
+<p>Yes it hard but if you're in this business you have to be an expert in this area. While we have the obvious set of unit tests, etc., infrastructure like this is pretty hard to test in isolated ways. To tackle this we've created our own framework for end to end acceptance testing by running full blown NServiceBus endpoints in various test suites to make sure all the combinations works as expected. Since those tests are completely black box this has allowed us to keep evolving the code base without unit tests getting in the way. This allows us to focus on using unit tests where it makes the most sense and complementing those with acceptance tests to make sure everything works as expected from an end user perspective.</p>
+<p>A nice side effect of moving to separate repositories is that we now can run our constantly growing suite of acceptance tests against all the different technologies and frameworks we support. Since running those tests takes a while we're leaning heavily on TeamCity to distribute that load on a elastic farm of build agents on the Amazon EC2 cloud platform.</p>
+<p>Without all this automation we could never have scaled up the number of technologies we support and maintain the quality you'd come to expect from us!</p>
+<h2>NSBCon London</h2>
+<p>In case you’ve missed it the first ever NServiceBus conference is happening 26th -27th June in <a href="https://skillsmatter.com/conferences/6198-nsbcon#" data-reveal-id="modal-venue">London</a>. There is a whole host of excellent speakers so make sure to not miss it!</p>
+<p><a href="https://skillsmatter.com/conferences/6198-nsbcon">https://skillsmatter.com/conferences/6198-nsbcon</a></p>
+<p>I’m going to deliver a session on how we do things inside engineering here at Particular Software, the abstract for the talk is:</p>
+<p>&nbsp;</p>
+<blockquote><p>Continuously delivering a top quality platform on which customers build and run their businesses is not a challenge to be taken lightly. Join Andreas Öhlund, Director of Engineering at Particular Software, for a journey through custom tooling, testing the un-testable and massive cloud service bills in the name of backwards compatibility, performance and reliability.</p>
+<p>An adventurous journey indeed but an absolute must to ensure that the software you depend on delivers what’s stated on the box.</p></blockquote>
+<p>If you want to hear more on this topic please join me at <a href="https://skillsmatter.com/conferences/6198-nsbcon">NSBCON</a> this June!</p>
+<h2>Enough talking!</h2>
+<p>Go to <a href="http://www.particular.net/">www.particular.net</a> and click the big “download now” button and take the new platform for a spin!</p>

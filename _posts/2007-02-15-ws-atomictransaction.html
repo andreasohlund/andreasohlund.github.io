@@ -1,0 +1,30 @@
+---
+layout: post
+title: ">WS-AtomicTransaction?"
+date: 2007-02-15 20:26:00.000000000 +01:00
+categories:
+- SOA
+- WS-*
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2007/02/ws-atomictransaction.html"
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>>Services as we all know should be autonomous , loosely coupled etc. With that in mind I've always wondered where WS-AtomicTransaction would fit in the "SOA-Equation". Well, now I think I figured out how WS-A.T should be used. ( lets call it Andreas first law of SOA :)</p>
+<p><em>"Any time WS-AtomicTransaction appears in your mind when working with SOA and Web Services this should act as a warning bell that your design is flawed and that you probably have too fine grained services. Go back to the drawing board!"</em></p>
+<p>Services should be coarse grained and I think that the need for "Atomic Transactions" between them clearly violates the autonomous, loosely coupled part of SOA.</p>
+<p>"Transactional" behaviour between services should instead be implemented using compensational logic, i.e. using business logic for handling error condition and "rollback" behaviour.  And with help of [Put your favourite BPMS,ESB,Integration platform here] to keep atomic transactions against it's messagebox and there by enable some limited "rollback" functionallity, guaranteed delivery etc. This combined with compensational logic should be sufficient for your transactional needs.</p>
+<p>Messaging patterns also have an impact on the use of transactions eg. if you use a pub/sub pattern between your services there would obviously be no need for any "Atomic Transactions"</p>
+<p>Here's my recommendation for a default implementation of WS-AtomicTransaction:</p>
+<p><strong>throw new BadDesignedSOAException();<br /></strong><br />Further reading:<br /><strong><br /></strong><strong></strong>Udi Dahan has a great <a href="http://udidahan.weblogs.us/archives/378">post </a>that also touches this subject.</p>

@@ -1,0 +1,30 @@
+---
+layout: post
+title: Build scripts - in Particular
+date: 2013-10-09 10:07:11.000000000 +02:00
+categories:
+- Particularities
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '1838924171'
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>In my <a href="http://andreasohlund.net/2013/10/07/the-pain-and-suffering-of-large-source-code-repositories/">previous post</a> I mentioned that we're moving towards a more fine grained structure for our repositories. This direction has had a quite interesting effects on our build scripts...</p>
+<h2>We don't use build scripts any more</h2>
+<p>Yes you read that correctly. Since we now have much less moving pieces in our repositories the complexity of our build has decrease to the point that we don't see any value in running scripts to perform our build. Actually that isn't entirely true since we use Visual Studio to do our builds and that's technically a build script.</p>
+<p>So let me rephrase: We don't use a separate scripting language apart from msbuild (csprojs + sln's) to build our source code. This means that we build locally using Visual Studio (or msbuild on the commandline) and on the build server (TeamCity) we use the Visual Studio solution build runner. This means that we can skip the dreaded readme.txt that tells you all the steps you need to do before you can fire up Visual Studio and get some coding done.</p>
+<h2>But MsBuild sucks?</h2>
+<p>Yes it surely sucks, being a recovering NAnt user I can sincerely tell you that all that xml is bad for your eyes. We moved from NAnt to psake and that was a great relief to manage our very complex build at that time without paying the xml-tax. But now it seems we've come full circle, yes we need to<a href="https://github.com/Particular/NServiceBus/blob/develop/src/NServiceBus.Core/NServiceBus.Core.csproj#L592"> drop back to hacking xml straight into the csprojs</a> now and then but we see that as healthy friction that tells us that we need to simplify in order to keep our goal that a "release build in visual studio should create production ready binaries". Yes we're not there yet hence the "release build" part. We needed to make this trade off since we still do ilmerge which can be quite time consuming so we decided to only do it for release builds. Again this friction is good since that is pushing us to find ways to avoid ilmerging  dependencies since that tends to come back to haunt you in the end.  If we need more advanced things like<a href="https://github.com/Particular/RippleRestoreTask"> package restore</a> using <a href="http://darthfubumvc.github.io/ripple/">ripple</a> and automatic versioning using <a href="https://github.com/Particular/GitFlowVersion">GitFlowVersion</a> we've created our own msbuild tasks to avoid to much xml editing.</p>
+<h2>Final words</h2>
+<p>I'm not saying that you should avoid build scripts but our journey towards small repos has allowed us to get away with just the .sln's and .csprojs's to handle out build and it has worked out very nicely for us.</p>

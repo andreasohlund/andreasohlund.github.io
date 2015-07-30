@@ -1,0 +1,25 @@
+---
+layout: post
+title: ">Fail fast when"
+date: 2010-01-22 08:33:00.000000000 +01:00
+categories: []
+tags: []
+status: draft
+type: post
+published: false
+meta:
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/feeds/1373345538737679187/posts/default/4140045454834413631"
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>>
+<p style="clear: both">In my last post we talked about to importance to keep config file lean by only putting stuff there that is truly relevant for change in production environments. This time we'll look at what to do when the configuration gets corrupted in some way. Ending up with misconfigured application as a scary situation that usually results in the application behaving in some strange way with inconsistency and/or corrupt data as a result. Usually meaning that you a developer gets called in to create hairy sql-script to remedy the situation, not fun... While you should try to design your system to behave well during error conditions there is a couple of important trick we can you to try to minimize the damage of a misconfigured app. </p>
+<p style="clear: both"><strong>Detect problems with config and prevent </strong><strong>startup</strong><br />This is the <a href="http://en.wikipedia.org/wiki/Fail-fast">fail fast</a> concept applied to configuration. </p>
+<p><br class="final-break" style="clear: both" /></p>

@@ -1,0 +1,27 @@
+---
+layout: post
+title: Unit of work in NServiceBus 3.0
+date: 2011-11-21 14:56:51.000000000 +01:00
+categories:
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '479254643'
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>When using a framework like NServiceBus there is usually a need to create your own unit of work in order to avoid having to repeat code over an over again in your message handlers. Examples would be committing NHibernate transactions, calling SaveChanges on the RavenDB session, etc etc. In NServiceBus 2.6 your only hook into the message pipeline was the <a href="http://blog.jonathanoliver.com/2010/04/extending-nservicebus-thread-specific-message-modules/">message modules</a>. This had some quirks since the HandleEndMessage method of the message module will be invoked regardless of the outcome and made it hard to decide if a commit or rollback should be performed. In NServiceBus 3.0 there is a new way to do this, meet the IManageUnitsOfWork interface</p>
+<p><script src="https://gist.github.com/1382212.js"> </script></p>
+<p>The semantics are that that Begin() will be called when the transport messages enters the pipeline, remember that a transport message can consist of multiple application messages. This allows you to do any setup that is required. The End() method is called when the processing is complete and if there was an exception that exception will be passed into the method. This gives you a way to perform different actions depending on the outcome of the message(s).</p>
+<p><strong>Want to see this in action?</strong></p>
+<p><a href="http://andreasohlund.net/2011/11/22/a-nservicebus-unit-of-work-implementation-for-ravendb/">My next post</a> will demonstrate how to build a Unit Of Work implementation for RavenDB so stay tuned...</p>

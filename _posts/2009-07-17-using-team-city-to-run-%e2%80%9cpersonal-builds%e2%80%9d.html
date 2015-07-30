@@ -1,0 +1,46 @@
+---
+layout: post
+title: ">Using Team City to run “personal builds”"
+date: 2009-07-17 12:30:00.000000000 +02:00
+categories:
+- NServiceBus
+- sqlite
+- Team City
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '299892663'
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2009/07/using-team-city-to-run-personal-builds.html"
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>>
+<p>Team City has a killer feature called <a href="http://www.jetbrains.com/teamcity/features/continuous_integration.html#Remote_Build_Run_and_Pre-Tested_Commit">remote run</a>. This gives you the ability to test your changes on the build server before actually committing anything. </p>
+<p><strong>Why is this needed, you might ask?</strong>&#160;</p>
+<p>Let me try to explain with an example. I’ve recently committed some features to <a href="http://www.nservicebus.com/">NServiceBus</a> where the tests where using <a href="http://www.sqlite.org/">Sqlite</a> for in memory testing of NHibernate mappings. The coding went smooth and all test where green “on my machine”. I’ve danced the checkin dance and finally committed the changes. </p>
+<p><strong>What do you think happened?</strong></p>
+<p>Well the “it works on my machine” devil paid me a visit and made sure that the Continuous Integration choked with a classic “Bad Image Format” exception. It turns out that the build agent over at <a href="http://teamcity.codebetter.com">http://teamcity.codebetter.com</a> is 64-bit and that caused the NUnit test runner to fail because I’ve compiled against the x86 version of Sqllite. But before I’ve got this fixed I had caused 10 failed builds, I don’t have a x64 machine so I had to do trial and error debugging. And trust me repeatedly failing the build is a great way to piss off your fellow developers. If I had been using the “personal build” feature before I committed&#160; this wouldn't have happened.</p>
+<p><strong>To start using this feature do the following:</strong></p>
+<ol>
+<li>Download the Team City Visual Studio plug in (login to your Team City server and click on “My Settings &amp; Tools”) </li>
+<li>Download the <a href="http://www.open.collab.net/downloads/subversion/">CollabNet Subversion client</a> and install it </li>
+<li>Open visual studio and
+<ol>
+<li>Login to Team City (from the “Team City” menu) </li>
+<li>Click on “Remote run” </li>
+<li>Make sure subversion support is enabled (see picture below)</li>
+</ol>
+</li>
+</ol>
+<p><a href="http://lh3.ggpht.com/_fqHEujhanB4/SmBgxOlm-uI/AAAAAAAAADM/Jk9e3djOggI/s1600-h/personal_build%5B9%5D.jpg"><img style="border-bottom: 0px; border-left: 0px; display: inline; border-top: 0px; border-right: 0px" title="personal_build" border="0" alt="personal_build" src="assets/personal_build_thumb%5B12%5D.jpg?imgmax=800" width="540" height="154" /></a> </p>
+<p>That should be it. Another great “move” added to my check in dance!</p>
+<p>Thanks to <a href="http://tunatoksoz.com/">Tuna Toksoz</a> for helping me with the Sqlite issue and reminding me of the “personal build” feature!</p>

@@ -1,0 +1,43 @@
+---
+layout: post
+title: Thread static caching in NServiceBus
+date: 2010-03-25 10:28:00.000000000 +01:00
+categories:
+- NServiceBus
+- StructureMap
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '299892750'
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2010/03/thread-static-caching-in-nservicebus.html"
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>NServiceBus keeps a static pool of threads that process incoming messages. This means that threads are not recreated for each new message with the effect that thread static variables are not cleared.</p>
+<div>If you use the thread static cache lifecycle of [Name of your favorite container here] this will have the effect that the objects placed in this cache will not be recreated for each new message as you might expect. The thread static cache is a great way to store objects that should be shared for the duration of each request. One example would be to share the NHibernate session as I have <a href="http://andreasohlund.blogspot.com/2010/02/nhibernate-session-management-in.html">talked about earlier. </a></p>
+<div>To remedy this problem for my favorite container StructureMap we need to extend the built-in thread static lifecycle and connect it to the message module feature of NServiceBus in order to clear the cache when message processing is complete.</div>
+<div>Our new lifecycle looks like this:</div>
+<div>
+<pre class="csharp" style="clear: both;">   public class NServiceBusThreadLocalStorageLifestyle : ThreadLocalStorageLifecycle,  IMessageModule   {       public void HandleBeginMessage(){}
+
+       public void HandleEndMessage()       {           EjectAll();       }
+
+       public void HandleError(){}   }</pre>
+</div>
+<div>To use our new lifecycle we'd have to configure StructureMap with the following syntax:</div>
+<div>
+<pre class="csharp" style="clear: both;">x.For&lt;ISession&gt;()  .LifecycleIs(new NServiceBusThreadLocalStorageLifestyle())  .Use(ctx =&gt;ctx.GetInstance&lt;ISessionFactory&gt;().OpenSession()));</pre>
+<p>The code for my <a href="http://github.com/andreasohlund/Blog/tree/master/NHibernateSample/">NHibernate sample project</a> has been updated to reflect this.</p>
+<p>Happy caching!</p>
+</div>
+</div>

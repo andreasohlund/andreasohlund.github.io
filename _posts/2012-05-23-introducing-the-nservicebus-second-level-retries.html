@@ -1,0 +1,32 @@
+---
+layout: post
+title: Introducing the NServiceBus Second Level Retries
+date: 2012-05-23 08:14:59.000000000 +02:00
+categories:
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '700562182'
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>In the latest release of<a href="http://nservicebus.com/NServiceBusV3NewFeatures.aspx"> NServiceBus (3.2)</a> we have introduced the concept of Second Level Retries (SLR). We've always had retries in NServiceBus but those retries  where aimed at transient errors like deadlocks and therefor performed instantly. Other more transient errors where just forwarded to a central error queue where they would be <a href="http://andreasohlund.net/2010/03/15/errorhandling-in-a-message-oriented-world/">managed by the team maintaining the application</a>. The SLR aims to solve the type of errors that can be classified as semi-transient. Examples would be a database being down for short period of time, a web-service being down for a few seconds etc. In previous versions of NServiceBus those errors would have been moved to the error queue but with SLR there is reasonably good chance that they will be retried successfully and there by not burdening the maintenance team.</p>
+<h3>Use with care</h3>
+<p>As I mention in my post on <a href="http://andreasohlund.net/2010/03/15/errorhandling-in-a-message-oriented-world/">errorhandling in a message oriented world</a> retrying is potentially dangerous since while retrying no one will know about the problem and if the error is non-transient you could potentially retry forever. Bottom line is that retries risk breaking your SLA's without you even knowing about it. So as a rule of thumb you should only retry until you reach:</p>
+<blockquote><p>MaxRetryTime = SLA for the particular messagetype - (Current time - Time the message was sent) - Your average response time for failures sent to the error q</p></blockquote>
+<p>This will give you a chance to correct non-transient errors before you break your SLA.</p>
+<p>NServiceBus will help you as much as it can by not retrying non-transient errors like deserialization exceptions etc but since we can't classify exceptions from user code this is of course not bullet proof.</p>
+<p>I'm not going into the details on how to configure SLR since that is covered by the NServiceBus documentation:</p>
+<p><a href="http://nservicebus.com/SecondLevelRetries.aspx">Second Level Retries</a></p>
+<p>We also included a <a href="https://github.com/NServiceBus/NServiceBus/tree/master/Samples/ErrorHandling">sample </a>that walks you through the full chain of error management in NServiceBus.</p>
+<p>Happy retrying!</p>

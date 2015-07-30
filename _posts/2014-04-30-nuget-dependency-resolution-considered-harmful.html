@@ -1,0 +1,40 @@
+---
+layout: post
+title: NuGet dependency resolution considered harmful
+date: 2014-04-30 12:42:28.000000000 +02:00
+categories: []
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '2649982576'
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>First let me tell you that I like NuGet, it's awesome to get a decent package manager for .Net and the team has done a great job getting NuGet into its current state. That said there is still room for improvements and the way NuGet resolves dependencies is one of them.</p>
+<p>The problem here is that NuGet by default finds the oldest version of package dependency that falls within the range you have specified. So if you have dependencies that follow <a href="http://semver.org/">SemVer</a>, meaning that everything within the same major number is compatible, this would lead you to specify the following dependency  range:</p>
+<p><em><strong>&lt;dependency id="ExamplePackage" version="[1.0.0, 2.0.0)" /&gt;</strong></em></p>
+<p>Meaning that everything within that range is ok for NuGet to use. In this scenario NuGet will by default look for the package with "the lowest minor version". While this is the "safest" approach I'm pretty sure it's not what the majority of users wants and expects. It also seems to contradict the nuget doco it self when it comes to versioning since it <a href="https://docs.nuget.org/docs/reference/versioning">clearly states</a>:</p>
+<blockquote><p>When most people install packages from NuGet, they want the latest “stable” release of that package</p></blockquote>
+<p>So if users would like the "latest stable release" it seems reasonable to assume that they would like the latest stable version of depending packages as well?</p>
+<p>While this could be argued back and forth regarding Minor releases <a href="https://stackoverflow.com/questions/23384514/nuget-resolves-the-wrong-version-of-package-dependency">this rule also apply to patch versions</a>. Ie if you depend on &gt;= 4.5.0 and there is a 4.5.1 package available NuGet will pick 4.5.0. This to me seems completely wrong since you bump patch when you put out a hotfix for critical bugs. This means that users will get potentially buggy versions of their dependencies.</p>
+<p>I'd argue that this is a bug in NuGet!</p>
+<h2>The workaround</h2>
+<p>While we wait for the NuGet team to fix this the workaround is to specify an explicit dependency strategy when installing packages:</p>
+<p><em><strong>install-package -DependencyVersion HighestMinor  {package name}</strong></em></p>
+<p>For a complete list of strategies please refer to the <a href="https://docs.nuget.org/docs/reference/package-manager-console-powershell-reference#Install-Package">official doco</a>.</p>
+<p>You can take this one step further and make it the default strategy by putting the following in you <a href="https://docs.nuget.org/docs/reference/nuget-config-file">machine wide nuget.config</a>:</p>
+<p>[gist id=ef46da18e681de2c31b5]</p>
+<h2>In closing</h2>
+<p>While I can see that the NuGet team want to take the safest approach and until SemVer has become the standard perhaps that's the right thing to do. My proposal would be to add an extra qualifier to the dependency to declare if the dependency is following SemVer or not. That could then cause NuGet to switch to the HighestMinor strategy which by definition is safe for SemVer compliant projects given that you specify a [{CurrentMajor}, {NextMajor}) which can be setup as the default if you use <a href="http://darthfubumvc.github.io/ripple/features/creatingpackages/">Ripple to generate your NuSpecs</a>.</p>
+<p><em><strong>&lt;dependency id="ExamplePackage" version="[1.0.0, 2.0.0)" strategy="SemVer" /&gt;</strong></em></p>
+<p>Perhaps that could be taken one step further by package publishers declaring in their package if they follow SemVer or not and that could be used by NuGet to select the most appropriate strategy.</p>
+<p>Hope this helps!</p>

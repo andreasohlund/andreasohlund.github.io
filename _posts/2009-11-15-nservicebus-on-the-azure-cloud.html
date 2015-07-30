@@ -1,0 +1,52 @@
+---
+layout: post
+title: ">NServiceBus on the Azure cloud"
+date: 2009-11-15 22:55:00.000000000 +01:00
+categories:
+- Azure
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '299892708'
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2009/11/nservicebus-on-azure-cloud.html"
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>>
+<p>Today I committed support for running NServiceBus on the <a href="http://www.microsoft.com/windowsazure/getstarted/">Azure</a> cloud to the trunk. Also included is a sample application that demonstrates&#160; how to build NServiceBus solutions for Azure.</p>
+<h3>Running the sample</h3>
+<ol>
+<li>To run the sample you have to install the Azure SDK and the Azure tools for Visual Studio. The easiest way to do this is through the&#160; <a href="http://www.microsoft.com/web/Downloads/platform.aspx">Web Platform Installer</a>. The azure tools are located under “Developer tools” ( If you can’t see them you have to enable them in “options” for the installer) </li>
+<li>Once you have tools installed you can get the latest NServiceBus trunk from <a href="http://sourceforge.net/projects/nservicebus/develop">subversion</a> or download the <a href="http://teamcity.codebetter.com/viewType.html?tab=buildTypeStatusDiv&amp;buildTypeId=bt60">latest build from our CI</a>. The sample is included in the samples folder </li>
+<li>Start up the “AzureService” solution in Visual Studio and hit F5 (NServiceBus defaults to Development Storage if no configuration section is present, more on this later) so you should see the Development. Storage and Development Fabric services start up. </li>
+</ol>
+<p>That should be it, the sample should now run in the <a href="http://msdn.microsoft.com/en-us/library/dd179455.aspx">development fabric</a> on your machine.</p>
+<h3>Configuration</h3>
+<p>The Azure queues support is configured using the fluent API</p>
+<pre class="csharp" name="code">var config = Configure.With()<br />    .SpringBuilder()<br />    .XmlSerializer()<br />    .UnicastBus()<br />    .LoadMessageHandlers()<br />    .AzureQueuesTransport()<br />    .IsTransactional(true)<br />    .PurgeOnStartup(false);</pre>
+<p>If no configuration section is found NServiceBus will default to your local development storage. To use your personal Azure storage with the sample add the following to the configuration files (web.config, app.config):</p>
+<pre class="xml" name="code">&lt;AzureQueueConfig <br />   AccountName=&quot;{Your account name}&quot; <br />   Base64Key=&quot;{Base64 key for your account}&quot; /&gt;</pre>
+<p>This configures NServiceBus to create and use queues on your Azure storage account. If you hit F5 again you should see the application start in your local fabric but this time the data is stored on Azure. <a href="http://www.cerebrata.com/?r=CSSV0.7.0">Cloud Storage Studio</a> is a great tool for managing you storage accounts both locally and on the cloud. The final step is to deploy the entire solution and run it completely on Azure. To do this “publish” the project in Visual Studio and upload the AzureService.cspkg and the ServiceConfiguration.cscfg to your Azure account. Detailed instructions on how to deploy solutions to Azure can be found <a href="http://msdn.microsoft.com/en-us/library/dd203057.aspx">here</a>.</p>
+<p>The sample application is currently running on my own Azure account, please try it out!<a title="http://nservicebus-demo.cloudapp.net" href="http://nservicebus-demo.cloudapp.net">http://nservicebus-demo.cloudapp.net</a> (And yes my web design skills sucks :)</p>
+<p>The sample is doing some simple send/receive and publish/subscribe operations between a WebRole and a WorkerRole. Please take look at the <a href="http://nservicebus.svn.sourceforge.net/viewvc/nservicebus/trunk/Samples/AzureService/">source code</a> for the details.</p>
+<h3>Considerations when running NServiceBus on Azure</h3>
+<p>Azure has some limitations that might affect the way you have to design your NServiceBus solutions:</p>
+<ul> 
+<li>Maximum message size is 8kb. Message size has always been a consideration given that MSMQ has a fixed limit of 4 Mb but the 8kb limit will probably cause problems for users that transports large messages on NServiceBus. There are plans to introduce a “data bus” concept to NServiceBus to allow users to transport larger messages. </li>
+<li>Messages are kept in the Azure Queues for at most 7 days. This shouldn’t be a big problem for normal usage (unless your endpoints are down for more than 7 days that is). But this also means that we can’t use the queues for subscription storage in the same way as we do with MSMQ. </li>
+<li>All queue names on Azure must be lower case. Complete naming rules <a href="http://msdn.microsoft.com/en-us/library/dd179349.aspx">here</a>. </li>
+<p></ul>
+<p><strong></strong></p>
+<h3>What’s next</h3>
+<p>Right now we support Azure Queues for transporting messages but we can only store subscriptions and sagas using in memory storage. This is of course only acceptable for demos so we are working on adding support for the available storage types that Azure offers . The fact that we have NHibernate implementations for both subscription storage and saga persistence hopefully means that we already support <a href="http://www.microsoft.com/windowsazure/sqlazure/">SQL Azure Services</a> but this has not been tested yet. (<a href="http://ayende.com/Blog/archive/2009/09/05/nhibernate-on-the-cloud-sql-azure.aspx">Ayende has more on this</a>). The next step in this area is to implement support for storing subscriptions and sagas using the <a href="http://msdn.microsoft.com/en-us/library/dd179423.aspx">Azure Table Storage</a>.</p>
+<p>We’re constantly trying to improve NServiceBus both in terms of technology and guidance so stayed tuned for more!</p>

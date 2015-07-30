@@ -1,0 +1,28 @@
+---
+layout: post
+title: ">NHibernate.Search gotcha when using a GUID as Id"
+date: 2008-04-13 06:39:00.000000000 +02:00
+categories:
+- NHibernate
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2008/04/nhibernatesearch-gotcha-when-using-guid.html"
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>>
+<p>If you are reading the excellent <a href="http://blogs.hibernatingrhinos.com/nhibernate/Default.aspx">NHibernate FAQ Blog</a> you're probably using a <a href="http://blogs.hibernatingrhinos.com/nhibernate/archive/2008/04/04/identity-field-equality-and-hash-code.aspx">System.Guid as id for your entities</a>. Unfortunately if you are planning to use <a href="http://www.hibernate.org/410.html">NHibernate.Search</a> to enable <a href="http://lucene.apache.org/java/docs/index.html">Lucent.Net</a> queries against your entities this won't work. NH.Search will throw a:</p>
+<p>&quot;Unable to guess IFieldBridge for System.Guid&quot; - Exception</p>
+<p>After some debugging (a great way to learn new frameworks) I found the problem. NH.Search has no &quot;bridge&quot; that can convert a Guid to Lucene format. </p>
+<p>I got it working by creating my own GuidBridge. This is why I love OSS-projects. If you find a problem you don't have to wait months for someone else to fix it for you!</p>
+<p>I've filed a <a href="http://jira.nhibernate.org:8080/jira/browse/NH-1288">patch</a> to the <a href="http://jira.nhibernate.org">NHibernate Jira</a> if you're having the same problem.</p>

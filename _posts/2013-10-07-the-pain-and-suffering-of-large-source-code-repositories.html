@@ -1,0 +1,49 @@
+---
+layout: post
+title: The pain and suffering of large source code repositories
+date: 2013-10-07 13:00:51.000000000 +02:00
+categories:
+- Particularities
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '1832727989'
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>Back in the days when we where hacking away at NServiceBus v2 we kept all code in a single repository, all was good, happy days...</p>
+<p>Things has changed since then, we started to feel pain, one day the happiness was gone...</p>
+<h2>Perhaps we'd outgrown the single repo model?</h2>
+<p>The first sign that we needed something else was the rename of the company to Particular. The move was driven by us wanting provide other NServiceBus related products and to create what we hope to be an awesome service platform. All those new products, ServiceMatrix, ServiceInsight, ServicePulse and ServiceControl obviously needed to go onto separate GitHub repositories. We now had to manage more than one repo and that process opened our eyes to the possibility to split the NServiceBus repo even further. I'm not saying that this applies to all of you out there but as you grow do pay attention and as the pain starts to increase it might be a sign that you need to split things up.</p>
+<p>NServiceBus v3 added support for Windows Azure as a transport, RavenDB as persistence and a host of new IoC containers. V4 added transports for ActiveMQ, RabbitMQ, WebSphereMQ, SqlServer. We've hit the tipping point, we couldn't stand the pain anymore...</p>
+<p><img class="alignnone" title="Pain and suffering" src="assets/pain-&amp;-suffering.gif" alt="" width="325" height="244" /></p>
+<h2>Sources of pain - One release to rule them all</h2>
+<p>Our massive NServiceBus repo effectively locked us to a "release everything every time" model. While this was fine when we only supported MSMQ as the underlying transport it got ridiculous with the addition of alternate transports. Imagine having to put out a patch release for RabbitMQ just because there was a bug in MSMQ. Yes you can do partial releases from one big repo but since everything from TeamCity to GitHub is really built with the repository == product == one release cycle mindset so the friction of partial releases would cause makes this workaround unsustainable.</p>
+<p>Since we need to release our transports, storages, containers in close relation to the release cycles of those said dependencies this essentially meant that we had to release a lot of components even though nothing had changed.</p>
+<blockquote><p>User: "So what's new in 4.0.3?"</p>
+<p>Us: "We updated to RavenDB 2.2"</p>
+<p>User: "But I'm using NHibernate to store my stuff in SqlServer?"</p></blockquote>
+<p><strong>#FAIL! </strong></p>
+<h3>Branching models</h3>
+<p>This pain is really an extension to the release cycle issues mentioned above but your branching model will most likely fall apart when you're trying to juggle multiple hotfixes/release for different parts of your source tree. We're using GitFlow as our branching model but I'm convinced the same would apply to pretty much all the different model out there. Imaging the confusion when you create a release-4.1.0 branch to start stabilising X and then the week after having to create a release-1.1.0 to stabilising Y. Since developers always seems mystified by the use of branches, I blame you TFS, Subversion, ClearCase!, this added dimension is definitely going to throw you right into "lets stick with the master branch" mode.</p>
+<h3>Test complexity and speed</h3>
+<p>We have an extensive suite of automated tests that runs for each transport, storage, container implementation we have. In order to support everything running of the same repo we needed to put in a lot of code to handle those "permutations". The other obvious drawback is since those tests are fairly slow and we need to run them all for every change it didn't scale at all. Since we've starting to split things up test complexity has gone down and tests runs much faster since we only run the ones that actually are relevant for the code that has changed.</p>
+<h3>Versioning</h3>
+<p>Since we want different versions for each "component", we follow semver, trying to achieve that on one big repo is doomed to fail. You can't put the version info into the build server since it it will build the entire repo for each change. Putting it into the repo it self is tricky and as well since it requires a lot of tinkering and causes the build complexity to go up seriously. Putting version info in the repo it self is IMO not a good idea since it causes tons of unneeded churn with all those "Bumping version to X.Y.Z" commits. I'll leave it to a follow up post to show you our take on solving this in a full automated way. (Spoiler - <a href="https://github.com/Particular/GitFlowVersion">GitFlowVersion</a>)</p>
+<p>These where the main pain points for us but the list goes on with Issue management, Pull request management, Contributions, Permissions, Repo size, Build complexity etc...</p>
+<h2>Is this multi repo thing all unicorns and cute kittens?</h2>
+<p>NO!</p>
+<p>If this was a few years back I'd say we couldn't have pulled it off since support for this type of structure is nowhere to be found in the tools at that time. Even today we've had to build a lot of custom tools to help us get where we want to be. Thing that could be done manually before transforms to productivity killers and I'll tell you this:</p>
+<p>If you're not prepared to breed an "automate everything" culture this thing is not for you. When going multi repo any manual task that might have been fine in the past will grind you to a halt. At Particular "automate everything" is one of our core values since we're not enough people to spend our precious time on "automatable" things like creating release notes, bumping versions, updating dependencies etc.</p>
+<p>We've put in a lot of effort to move in this direction and our collaboration with the <a href="http://mvc.fubu-project.org/">FubuMVC</a> project has been invaluable since they are quite far down the fine grained repo road and has provided us with great insights and tools. Thanks Josh and Jeremy!</p>
+<p>I definitely hope to get my blogging act together so this is the first post in a series where I talk about all the tools we use/created processes we follow/had to adjust to embark this journey. So far we've got the transports separated and setting our sights on the storages and containers next. We're even looking at cleaning up our core even further by moving optional components like or Gateway and Distributor to separate repositories as well.</p>
+<p>TL;DR; Fine grained repositories requires a great deal of effort but is definitely worth it! #yourmileagemayvary</p>

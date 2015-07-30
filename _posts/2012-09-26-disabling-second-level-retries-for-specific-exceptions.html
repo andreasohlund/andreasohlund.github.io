@@ -1,0 +1,58 @@
+---
+layout: post
+title: Disabling Second Level Retries for specific exceptions
+date: 2012-09-26 08:18:41.000000000 +02:00
+categories:
+- In depth
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '859764592'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>NServiceBus supports two different types of retries, first level retries (FLR) that happens immediately by bouncing the message back to the<span style="text-decoration: underline;"> top of the input queue</span> and <a href="http://nservicebus.com/SecondLevelRetries.aspx">Second Level Retries (SLR)</a> that happens after a configurable amount of time.</p>
+<p>In short the FLR aims to solve any transient exceptions like deadlocks while SLR solves more semi-transient ones like the database being down. Usually this all this works out of the box without you doing any thing but in some scenarios you might want to skip the SLR for exceptions where you know that that there is no chance of success.</p>
+<h2>Why you usually don't need to worry about this</h2>
+<p>I usually suggest to avoid tweeking the retries as long as you can since exceptions in production that isn't solvable through retries should be rare. To achieve this we should always design our messages to have "no good reason to fail" we can refine that to "no good business reason to fail". If messages have no business reason to fail the only failures you'll get is infrastructure failures which is very likely to be solvable through retries. I usually classify my messages into events and "other messages" (commands + request/response) and when looking at those a event should definitely never have a business reason to fail since a event is something important that <strong><span style="text-decoration: underline;">has</span></strong> happened in the business so it's not like we can roll it back.</p>
+<p>If we follow the guidelines above fiddling with the retries is most likely a case of premature optimization.</p>
+<p>Kijana has posted a lot of good insights regarding this <a href="http://tech.groups.yahoo.com/group/nservicebus/message/15959"> over at the NServiceBus group</a>.</p>
+<p>All that said the purist approach is always, well a purist approach:)</p>
+<h2>Why  you might need fine grained control over the SLR</h2>
+<p>While messages that have no business reason to fail is always achievable in theory, practically it's not always applicable to every real life situation so lets talk about a few scenarious where you might wan't to get more control of what gets retried.</p>
+<p>If you have messages that can fail for a business reason excessive retries can cause issues with:</p>
+<ol>
+<li>Performance - Retrying causes extra load on your infrastructure like databases and if again if we fail fast we decrease this type of load</li>
+<li>SLA's -  If you have a tight SLA for the given message type all time spent retrying is lost time when it comes to "manually" fixing the problem within your SLA. In these situations we want to fail fast and let NServiceBus move the message to the error queue so that our maintenance team can take action.</li>
+</ol>
+<div>I believe that the latter is the most valid one since if #1( performance) is an issue, remember that you get throttling out of the box with NServiceBus, this means that your system is regularly throwing business exceptions in production and I think that should be considered a "bug".</div>
+<div></div>
+<div>So if SLA's is the only valid reason to suppress retries there is really no need get fine grained control over FLR since the FLR happens immediately without any delay and wouldn't effect your SLA's. If that is a problem just tune the number if FLR's down, the default is 5. NServiceBus doesn't actually given you anyway to do more since we don't want users to get overly smart with the FLR.</div>
+<div></div>
+<div>SLR is a different story since if you have a 30 min SLA spending 10 of those retrying a business exception only leaves you with 20 minutes to take action.</div>
+<p>Enough talk, here's how to do it.</p>
+<h2>Disabling SLR for certain exceptions</h2>
+<p>SLR allows users to supply a  custom retry policy. A custom retry policy gives you the ability to control the delay between retries for a given message. In this case we'll combine this with the fact that if you specify the delay to be TimeSpan.MinValue NServiceBus will interpret this as "don't do any more retries". When creating a custom retry policy we get access to the <a href="http://andreasohlund.net/2012/01/31/the-difference-between-messages-and-messages/">TransportMessage</a> that failed and fortunately NServiceBus will add headers to that message that contains the exception details. Those headers are:</p>
+<ul>
+<li>NServiceBus.ExceptionInfo.Reason</li>
+<li>NServiceBus.ExceptionInfo.ExceptionType</li>
+<li>NServiceBus.ExceptionInfo.InnerExceptionType</li>
+<li>NServiceBus.ExceptionInfo.Message</li>
+<li>NServiceBus.ExceptionInfo.Source</li>
+<li>NServiceBus.ExceptionInfo.StackTrace</li>
+<li>NServiceBus.ExceptionInfo.HelpLink</li>
+</ul>
+<p>So to create a custom policy that supresses SLR if the exception type is of the type MyBusinessException the only thing you have to do is this:</p>
+<p>[gist id=3781308]</p>
+<p>As you can see we just look at the headers and return TimeSpan.MinValue to abort the SLR. If you have other requirements just modify the policy to look at any of the other headers listed above.</p>
+<p>Hope this helps!</p>

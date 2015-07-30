@@ -1,0 +1,46 @@
+---
+layout: post
+title: ">Handle your session with care!"
+date: 2008-09-16 21:57:00.000000000 +02:00
+categories:
+- NHibernate
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2008/09/handle-your-session-with-care.html"
+  dsq_thread_id: '299892622'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>>
+<p>Recently I was working on a piece of code that would batch items from a stage area into our application. Everything worked ok but when we tested the solution with lots of data the performance was not what we had hoped for. After running a profile using <a href="http://www.jetbrains.com/profiler/">dotTrace</a> a got a bit puzzled to see that reason for our poor performance was the dirty tracking performed by the NHibernate session. As it turned out it was my own stupid way of handling the session that caused the problem.</p>
+<p><strong>The problem</strong></p>
+<p>Let me try to explain the problem and how to solve it.  The original code looked something like this: </p></p>
+<pre style="border-right: #999999 1px dashed; padding-right: 5px; border-top: #999999 1px dashed; padding-left: 5px; font-size: 12px; padding-bottom: 5px; overflow: auto; border-left: #999999 1px dashed; width: 101.9%; color: #000000; line-height: 14px; padding-top: 5px; border-bottom: #999999 1px dashed; font-family: andale mono, lucida console, monaco, fixed, monospace; height: 224px; background-color: #eee"><code>using(var session = sessionSource.GetSession())<br />{<br />   IList&lt;WorkItem&gt; itemsToProcess = GetAvailableWork(batchSize);<br /><br />   foreach(var item in itemsToProcess)<br />     {<br />       using(var tx = session.BeginTransaction())<br />       {<br />           //do work<br />           tx.Commit();<br /><br />       }<br />     }<br />}<br /></code></pre>
+<p>The problem with this approach is that every object that is saved or loaded through a session is cached in the sessions first level cache. This is usually good (saves you some trips to the database), but in my case using a single session for the entire operation had the effect that a large number objects where associated with my session and every time I committed my transaction NHibernate had to go through all objects and determine if something had changed in order to save the changes in the database. So while I kept loading more and more objects into my session the number of "dirty checks" kept increasing and thereby killing performance.</p>
+<p>Ok, I've added this to my how to Shoot My Self In The Foot List so hopefully it wont happen again. Now lets see how we can solve this problem.</p>
+<p><strong>Solution 1 - The "Clear session hack"</strong></p>
+<p>The quick way to solve this is to clear the session after getting the list of objects to process and also after every commit. </p>
+<pre style="border-right: #999999 1px dashed; padding-right: 5px; border-top: #999999 1px dashed; padding-left: 5px; font-size: 12px; padding-bottom: 5px; overflow: auto; border-left: #999999 1px dashed; width: 102.79%; color: #000000; line-height: 14px; padding-top: 5px; border-bottom: #999999 1px dashed; font-family: andale mono, lucida console, monaco, fixed, monospace; height: 306px; background-color: #eee"><code>using(var session = sessionSource.GetSession())<br />{<br />   IList&lt;WorkItem&gt; itemsToProcess = GetAvailableWork(batchSize);<br />  <br />   //clear session to avoid unnecessary dirty tracking<br />   session.Clear();<br /><br />   foreach(var item in itemsToProcess)<br />     {<br />       using(var tx = session.BeginTransaction())<br />       {<br />           //do work<br />           tx.Commit();<br /><br />       }<br />       //clear session to avoid unnecessary dirty tracking<br />       session.Clear();<br /><br />     }<br />}<br /></code></pre>
+<p>This solution is quick and dirty (after all we are talking about dirty tracking :) ) but after reading <a href="http://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882">Clean Code</a> I consider the need for comments in my code a sign of bad naming or just a plain excuse for a hack. There for I decided to refactor it a bit.</p>
+<p><strong>Solution 2 - The "do it the way it should be done"</strong></p>
+<p>The correct way to do this is to use a new session for each "unit of work" and there by eliminating the need for cryptic calls to session.Clear(). The code below illustrates this solution:</p>
+<pre style="border-right: #999999 1px dashed; padding-right: 5px; border-top: #999999 1px dashed; padding-left: 5px; font-size: 12px; padding-bottom: 5px; overflow: auto; border-left: #999999 1px dashed; width: 100.42%; color: #000000; line-height: 14px; padding-top: 5px; border-bottom: #999999 1px dashed; font-family: andale mono, lucida console, monaco, fixed, monospace; height: 265px; background-color: #eee"><code>using(var session = sessionSource.GetSession())<br />{<br />   IList&lt;WorkItem&gt; itemsToProcess = GetAvailableWork(batchSize);<br />}<br />  <br /><br />foreach(var item in itemsToProcess)<br />{<br />   using(var session = sessionSource.GetSession())<br />   using(var tx = session.BeginTransaction())<br />   {<br />       //do work<br />       tx.Commit();<br />   }<br />}<br /></code></pre>
+<p>EDIT:
+<div>As Marko Lahma points out in the comments an even better way to solve this is to remove the cache completely by using the stateless session instead!</div>
+<div></div>
+<div><a href="http://nhforge.org/blogs/nhibernate/archive/2008/10/30/bulk-data-operations-with-nhibernate-s-stateless-sessions.aspx">http://nhforge.org/blogs/nhibernate/archive/2008/10/30/bulk-data-operations-with-nhibernate-s-stateless-sessions.aspx</a></div>
+<div></div>
+<div><a href="http://nhforge.org/blogs/nhibernate/archive/2008/10/30/bulk-data-operations-with-nhibernate-s-stateless-sessions.aspx"></a>Thanks Marko for the heads up!
+<p><strong>Lessons learned</strong></p>
+<p>Make sure you understand how the NHibernate session caches objects and perform dirty tracking in order to get maximum performance!</p>
+</p></div>

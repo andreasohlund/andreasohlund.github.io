@@ -1,0 +1,65 @@
+---
+layout: post
+title: Limits on message size and why it might be a problem for you
+date: 2011-01-18 14:35:00.000000000 +01:00
+categories:
+- Cloud
+- Messaging
+- NServiceBus
+- Queuing
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '299892772'
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2011/01/limits-on-message-size-and-why-it-might.html"
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p><a href="http://lh3.ggpht.com/_fqHEujhanB4/TTWXBVvY0iI/AAAAAAAAAEw/-MbgAq99pTc/s1600-h/size_matters%5B3%5D.jpg"><img style="display: inline; margin-left: 0px; margin-right: 0px; border-width: 0px;" title="size_matters" src="assets/size_matters_thumb%5B1%5D.jpg?imgmax=800" border="0" alt="size_matters" width="244" height="210" align="right" /></a>Message queuing technologies  always have an upper limit set for the message size they are able to transport. The size limit is usually related to some constraint imposed by the underlying technologies used to implement the queuing system. Usually this is not a problem since the limit for the common enterprise messaging systems are quite large. MSMQ for example has a limit on 4 MB and that should be more than enough for the common use case. With the introduction of cloud bases queues this limit has increased due to the challenges that comes with cloud based infrastructure, scalability, geographic distribution, replication across data centers etc etc. The limits for Azure Queues is officially 8KB(6144 bytes in practice - <a title="http://bit.ly/bSjPfK" href="http://bit.ly/bSjPfK">http://bit.ly/bSjPfK</a>), 64 KB for .net service bus queues and Amazon SQS is also to 8KB. With these lower limits the maximum message size is something that is more likely to cause problems for you as an application developer.</p>
+<h3>Some scenarios that may result in large messages</h3>
+<p>There are a couple of scenarios where you might run into trouble with and I’ll try to explain them below.</p>
+<ul>
+<li><strong>Sending multiple messages in the same batch where the total size exceeds the limit</strong></li>
+</ul>
+<p>Some queuing abstractions, eg. NServiceBus, allows you to send multiple messages in the same “batch” in order to preserve message ordering and make sure that those messages gets process in the same Unit of Work by the receiver. This technique is often used when clients wants to send a batch of commands for processing by a backend service. This is usually not a problem since there needs to be a lot of commands to reach the limit even with the cloud based queues. If you do get into trouble you might want to look into using Sagas to coordinate your message interactions. Events on the other hand should never be published in a “batch” since ordering and UoW doesn’t make sense for events. So the bottom line is that if you hit the limit when trying to batch messages your best bet is to change your design.</p>
+<ul>
+<li><strong>Sending a single message where the number of properties are large enough to reach the size limit</strong></li>
+</ul>
+<p>This usually happens when your trying to transmit messages whose schema is based on some industry standard such as EDIFACT or some other bloated behemoth. One solutions is transforming the message to a custom message schema where all the unused properties are removed. A slight variation of the former technique is to extract the relevant properties but also transmit the original data serialized in a more compact format as a special property of your message. Depending on the compression rate and the limit on message size this might not be enough and that leads us to the final scenario.</p>
+<ul>
+<li><strong>Sending a message containing one or many large properties</strong></li>
+</ul>
+<p>This is the most common scenario for breaking the message size limit. This can happen because of the reason mentioned above or in general when the payload contains a large object of some kind. Examples are images that needs to be processed, scientific data, weather data etc etc , you get the point. This is a valid scenario where it makes sense to use messaging so developers needs to find a way to work around this limitation.</p>
+<h3>The solution</h3>
+<p>In order to keep message size down we need to find a way to send the large properties on a separate channel from our regular message. To be able to correlate between the message and the separated data an ID needs to be sent together with the message so that the receiver can get the data from the separate channel using the ID when the message is received. Examples of such data channels are FileShare, Ftp, Cloud Blob storage, database, etc etc. All this can be summarized in the following steps:</p>
+<ol>
+<li>Design your message to contain a identifier instead of the actual large properties</li>
+<li>Generate unique id’s for the properties</li>
+<li>Send the properties on the data channel using the above id</li>
+<li>Send the regular message</li>
+<li>Receive the message</li>
+<li>Receive the properties from the data channel and proceed with processing</li>
+</ol>
+<p>There are some issues that you need to be aware of though:</p>
+<ul>
+<li>Your message design needs to take this into account. Since messages are just DTO’s this should not be an issue for you</li>
+<li>The data channel becomes another point of failure that you need to take into account</li>
+<li>Performance of the data channel can become and issue</li>
+<li>You need to handle the case where the data isn’t available on the other side when a message arrives</li>
+<li>You need a strategy for cleaning up you data channel periodically</li>
+<li>Should you support publish and subscribe?</li>
+</ul>
+<p><strong>What about transactions?</strong></p>
+<p>A “Put” operation can easily be made idempotent by just overwriting the existing key if it already exists, just make sure to generate unique ID’s. This combined with a separated cleanup process to purge to data channel periodically lets you do a simple “get” to fetch the data on the other side. This should remove the need for your data channel to enlist in any transaction at all.</p>
+<h3>In closing</h3>
+<p>Given the lower limits imposed by cloud based queues this has become a more common problem than before. The workaround is quite straight forward but can bite you if you’re not careful. To help developers in this regard we have plans to introduce a “Databus” feature to NServiceBus that hopefully will make it a lot easier to send and receive messages containing large properties. I’ll save the details for an upcoming post.</p>

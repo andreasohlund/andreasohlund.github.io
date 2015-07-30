@@ -1,0 +1,251 @@
+---
+layout: post
+title: ">UnitOfWork in WCF using StructureMap"
+date: 2009-04-27 18:01:00.000000000 +02:00
+categories:
+- StructureMap
+- WCF
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  blogger_blog: andreasohlund.blogspot.com
+  blogger_permalink: "/2009/04/unitofwork-in-wcf-using-structuremap.html"
+  dsq_thread_id: '299892680'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>>
+<p>In this post I will demonstrate a way to automatically manage a <a href="http://www.martinfowler.com/eaaCatalog/unitOfWork.html">UnitOfWork</a> (UoW) for Windows Communication Foundation (WCF) service requests. This is the equivalent of “Session per request” that is popular for Web applications. The reason for all this is to move transaction management out of user code resulting in cleaner and more maintainable applications. </p>
+<p>The semantics of my UoW is the following, for each request to my WCF service:</p>
+<ol>
+<ol>
+<li>Create a new UoW and initialize it </li>
+<li>Cache the UoW in StructureMap for the duration of the request </li>
+<li>Commit and dispose the UoW when the request finishes </li>
+<li>Rollback the UoW if the service throws an exception </li>
+</ol>
+</ol>
+<p>My interface for the UoW looks like this:</p>
+<p> <!-- code formatted by http://manoli.net/csharpformat/ -->
+<div class="csharpcode">
+<pre class="alt"><span class="lnum">   1:  </span><span class="kwrd">public</span> <span class="kwrd">interface</span> IUnitOfWork : IDisposable</pre>
+<pre><span class="lnum">   2:  </span>{</pre>
+<pre class="alt"><span class="lnum">   3:  </span>    <span class="kwrd">void</span> Initialize();</pre>
+<pre><span class="lnum">   4:  </span>    <span class="kwrd">void</span> Commit();</pre>
+<pre class="alt"><span class="lnum">   5:  </span>    <span class="kwrd">void</span> Rollback();</pre>
+<pre><span class="lnum">   6:  </span>}</pre>
+<p></div>
+<div class="csharpcode">&#160;</div>
+<p>To do all this we need the following infrastructure.</p>
+<ol> 
+<ol> 
+<li>Basic StructureMap integration for WCF </li>
+<li>A way to cache objects for the duration of the service call </li>
+<li>Integration between the cache StructureMap </li>
+<li>Some hooks in WCF to allow us the Initialize and commit the UoW </li>
+<li>Another hook to detect exceptions and rollback the UoW </li>
+<p>  </ol>
+<p></ol>
+<p>Let’s taka a closer look at how we can’t implement all this.</p>
+<h4>Basic StructureMap integration for WCF</h4>
+<p>This is a solved problem so I wont go into the details (Jimmy Bogard has an excellent <a href="http://www.lostechies.com/blogs/jimmy_bogard/archive/2008/07/29/integrating-structuremap-with-wcf.aspx">post</a> on the subject). Basically this means creating a “ServiceHostFactory” which in the end allows us to specify our own “instance provider”. Using this provider we can use StructureMap to instantiate the reuested instances.</p>
+<h4>Building a WCF per request cache</h4>
+<p>To enable caching I decided to cache objects in the WCF <a href="http://www.danrigsby.com/blog/index.php/2008/05/23/understanding-instancecontext-in-wcf/">InstanceContext</a>. The instance context is isolated for each service instance. This means that we must make sure that WCF creates a new Instance for each call (the default is one Instance per session). This is easily done by adding the following to our service implementations:</p>
+<p><!-- code formatted by http://manoli.net/csharpformat/ --></p>
+<div class="csharpcode"> 
+<pre class="alt"><span class="lnum">   1:  </span>[ServiceBehavior(InstanceContextMode = InstanceContextMode.PerCall)]</pre>
+<p></div>
+<p>Ok, but how do we cache stuff in the InstanceContext? Unfortunately WCF doesn't provide any collection like <a href="http://msdn.microsoft.com/en-us/library/system.web.httpcontext_members.aspx">HttpRequest.Current.Items</a> so we have to use the extensibility hooks in WCF to solve the problem. In this case we add our own Instance extension that can handle the caching for us. This is done by creating&#160; a class that implements IExtension&lt;InstanceContext&gt;. The implementation looks like this:</p>
+<p><!-- code formatted by http://manoli.net/csharpformat/ --></p>
+<div class="csharpcode"> 
+<pre class="alt"><span class="lnum">   1:  </span><span class="kwrd">public</span> <span class="kwrd">class</span> WCFContextCacheExtension : IExtension&lt;InstanceContext&gt;</pre>
+<pre><span class="lnum">   2:  </span>{</pre>
+<pre class="alt"><span class="lnum">   3:  </span>    <span class="kwrd">private</span> MainObjectCache cache;</pre>
+<pre><span class="lnum">   4:  </span>&#160;</pre>
+<pre class="alt"><span class="lnum">   5:  </span>    <span class="kwrd">public</span> IObjectCache Cache</pre>
+<pre><span class="lnum">   6:  </span>    {</pre>
+<pre class="alt"><span class="lnum">   7:  </span>        get { <span class="kwrd">return</span> cache; }</pre>
+<pre><span class="lnum">   8:  </span>    }</pre>
+<pre class="alt"><span class="lnum">   9:  </span>&#160;</pre>
+<pre><span class="lnum">  10:  </span>    <span class="kwrd">public</span> <span class="kwrd">static</span> WCFContextCacheExtension Current</pre>
+<pre class="alt"><span class="lnum">  11:  </span>    {</pre>
+<pre><span class="lnum">  12:  </span>&#160;</pre>
+<pre class="alt"><span class="lnum">  13:  </span>        get</pre>
+<pre><span class="lnum">  14:  </span>        {</pre>
+<pre class="alt"><span class="lnum">  15:  </span>            <span class="kwrd">return</span> OperationContext.Current.</pre>
+<pre><span class="lnum">  16:  </span>                InstanceContext.Extensions.Find&lt;WCFContextCacheExtension&gt;();</pre>
+<pre class="alt"><span class="lnum">  17:  </span>        }</pre>
+<pre><span class="lnum">  18:  </span>&#160;</pre>
+<pre class="alt"><span class="lnum">  19:  </span>    }</pre>
+<pre><span class="lnum">  20:  </span>    <span class="kwrd">public</span> <span class="kwrd">void</span> Attach(InstanceContext owner)</pre>
+<pre class="alt"><span class="lnum">  21:  </span>    {</pre>
+<pre><span class="lnum">  22:  </span>        cache = <span class="kwrd">new</span> MainObjectCache();</pre>
+<pre class="alt"><span class="lnum">  23:  </span>    }</pre>
+<pre><span class="lnum">  24:  </span>&#160;</pre>
+<pre class="alt"><span class="lnum">  25:  </span>    <span class="kwrd">public</span> <span class="kwrd">void</span> Detach(InstanceContext owner)</pre>
+<pre><span class="lnum">  26:  </span>    {</pre>
+<pre class="alt"><span class="lnum">  27:  </span>&#160;</pre>
+<pre><span class="lnum">  28:  </span>    }</pre>
+<pre class="alt"><span class="lnum">  29:  </span>}</pre>
+<p></div>
+<p>Note that I’m using the MainObjectCache from StructureMap as the store for my cached objects, the reason for this will be explained when we take a look at how this can be integrated with StructureMap. I’ve also added a convenience method that finds the extension from the InstanceContext. But how do we make sure that our extension is added to every new Instance?</p>
+<p>My approach is to implement a “InstanceContextInitializer” which is added to the dispatch runtime. This is accomplished with this modification to my StructureMap WCF integration:</p>
+<p><!-- code formatted by http://manoli.net/csharpformat/ --></p>
+<div class="csharpcode"> 
+<pre class="alt"><span class="lnum">   1:  </span>ed.DispatchRuntime</pre>
+<pre><span class="lnum">   2:  </span>   .InstanceContextInitializers</pre>
+<pre class="alt"><span class="lnum">   3:  </span>      .Add(<span class="kwrd">new</span> InstanceContextCacheInitializer()); </pre>
+<p></div>
+<p>The implementation of the InstaceContextInitializer is trivial:</p>
+<p><!-- code formatted by http://manoli.net/csharpformat/ --></p>
+<div class="csharpcode"> 
+<pre class="alt"><span class="lnum">   1:  </span><span class="kwrd">public</span> <span class="kwrd">class</span> InstanceContextCacheInitializer : IInstanceContextInitializer</pre>
+<pre><span class="lnum">   2:  </span>{</pre>
+<pre class="alt"><span class="lnum">   3:  </span>    <span class="kwrd">public</span> <span class="kwrd">void</span> Initialize(InstanceContext instanceContext, Message message)</pre>
+<pre><span class="lnum">   4:  </span>    {</pre>
+<pre class="alt"><span class="lnum">   5:  </span>        instanceContext.Extensions.Add(<span class="kwrd">new</span> WCFContextCacheExtension());</pre>
+<pre><span class="lnum">   6:  </span>    } </pre>
+<pre class="alt"><span class="lnum">   7:  </span>}</pre>
+<p></div>
+<p>Ok, now that we have a way to cache objects in the InstanceContext lets see how we can integrate this with the StructureMap way of caching instances .</p>
+<h4>A WCFInstanceContextCache for StructureMap</h4>
+<p>Extending StructureMap with a custom caching solution is done by implementing your own “lifecycle”. (<a href="http://structuremap.sourceforge.net/Scoping.htm">Here is an indepth discussion of scoping in StructureMap</a>.)</p>
+<p>In this case our custom lifecycle would look like this:</p>
+<p><!-- code formatted by http://manoli.net/csharpformat/ --></p>
+<div class="csharpcode"> 
+<pre class="alt"><span class="lnum">   1:  </span><span class="kwrd">public</span> <span class="kwrd">class</span> WCFInstanceContextLifecycle : ILifecycle</pre>
+<pre><span class="lnum">   2:  </span>{</pre>
+<pre class="alt"><span class="lnum">   3:  </span>    <span class="kwrd">public</span> <span class="kwrd">void</span> EjectAll()</pre>
+<pre><span class="lnum">   4:  </span>    {</pre>
+<pre class="alt"><span class="lnum">   5:  </span>        FindCache().DisposeAndClear();</pre>
+<pre><span class="lnum">   6:  </span>    }</pre>
+<pre class="alt"><span class="lnum">   7:  </span>&#160;</pre>
+<pre><span class="lnum">   8:  </span>    <span class="kwrd">public</span> IObjectCache FindCache()</pre>
+<pre class="alt"><span class="lnum">   9:  </span>    {</pre>
+<pre><span class="lnum">  10:  </span>        <span class="kwrd">return</span>  WCFContextCacheExtension.Current.Cache;</pre>
+<pre class="alt"><span class="lnum">  11:  </span>    }</pre>
+<pre><span class="lnum">  12:  </span>}</pre>
+<p></div>
+<p>As you can see StructureMap requires our cache to implement the IObjectCache interface hence the use of MainObjectCache above. Noting magic here we just fetch the cache from our InstanceContext extension and let StructureMap do the rest.</p>
+<p>The will enable us to configure StructureMap like this in order to cache objects for the duration of a service call:</p>
+<p><!-- code formatted by http://manoli.net/csharpformat/ --></p>
+<div class="csharpcode"> 
+<pre class="alt"><span class="lnum">   1:  </span>x.ForRequestedType&lt;IUnitOfWork&gt;()</pre>
+<pre><span class="lnum">   2:  </span>     .LifecycleIs(<span class="kwrd">new</span> WCFInstanceContextLifecycle())</pre>
+<pre class="alt"><span class="lnum">   3:  </span>     .AddConcreteType&lt;TestUnitOfWork&gt;();</pre>
+<p></div>
+<p>Now that we have a way to cache our UoW for the duration of each service call we can move on to making sure that the UoW is initialized and committed automatically for each request.</p>
+<h4>How to manage the UoW on a Per request basis</h4>
+<p>To enable us to automatically initialize and commit our UoW we need a way to hook up to the WCF call pipeline. This is done by adding a custom IDispatchMessageInspector (a deeper explanation of MessageInspectors is found <a href="http://blogs.msdn.com/zelmalki/archive/2008/12/29/creating-a-wcf-idispatchmessageinspector.aspx">here</a>).</p>
+<p>To enable us to add message inspectors easily I've added the following feature to my StructureMap WCF integration:</p>
+<p><!-- code formatted by http://manoli.net/csharpformat/ --></p>
+<div class="csharpcode"> 
+<pre class="alt"><span class="lnum">   1:  </span><span class="kwrd">foreach</span> (var messageInspector <span class="kwrd">in</span> container.GetAllInstances&lt;IDispatchMessageInspector&gt;())</pre>
+<pre><span class="lnum">   2:  </span>{</pre>
+<pre class="alt"><span class="lnum">   3:  </span>    ed.DispatchRuntime.MessageInspectors.Add(messageInspector);</pre>
+<pre><span class="lnum">   4:  </span>}</pre>
+<p></div>
+<p>This gives me an easy way to add MessageInspectors just by configuring them in StructureMap.</p>
+<p><!-- code formatted by http://manoli.net/csharpformat/ --></p>
+<div class="csharpcode"> 
+<pre class="alt"><span class="lnum">   1:  </span>x.ForRequestedType&lt;IDispatchMessageInspector&gt;()</pre>
+<pre><span class="lnum">   2:  </span>    .AddConcreteType&lt;UnitOfWorkMessageInspector&gt;();</pre>
+<p></div>
+<p>&#160;</p>
+<p>With this in place it’s easy to implement my own “UnitOfWorkMessageInspector” that hooks up to WCF and performs the work. This looks like this:</p>
+<p><!-- code formatted by http://manoli.net/csharpformat/ --></p>
+<div class="csharpcode"> 
+<pre class="alt"><span class="lnum">   1:  </span><span class="kwrd">public</span> <span class="kwrd">class</span> UnitOfWorkMessageInspector: IDispatchMessageInspector</pre>
+<pre><span class="lnum">   2:  </span>{</pre>
+<pre class="alt"><span class="lnum">   3:  </span>    <span class="kwrd">private</span> <span class="kwrd">readonly</span> IContainer container;</pre>
+<pre><span class="lnum">   4:  </span>&#160;</pre>
+<pre class="alt"><span class="lnum">   5:  </span>    <span class="kwrd">public</span> UnitOfWorkMessageInspector(IContainer container)</pre>
+<pre><span class="lnum">   6:  </span>    {</pre>
+<pre class="alt"><span class="lnum">   7:  </span>        <span class="kwrd">this</span>.container = container;</pre>
+<pre><span class="lnum">   8:  </span>    }</pre>
+<pre class="alt"><span class="lnum">   9:  </span>&#160;</pre>
+<pre><span class="lnum">  10:  </span>    <span class="kwrd">public</span> <span class="kwrd">object</span> AfterReceiveRequest(<span class="kwrd">ref</span> Message request, IClientChannel channel, InstanceContext instanceContext)</pre>
+<pre class="alt"><span class="lnum">  11:  </span>    {</pre>
+<pre><span class="lnum">  12:  </span>        var unitOfWork = container.GetInstance&lt;IUnitOfWork&gt;();</pre>
+<pre class="alt"><span class="lnum">  13:  </span>&#160;</pre>
+<pre><span class="lnum">  14:  </span>        Debug.WriteLine(<span class="str">&quot;Before invoke&quot;</span>);</pre>
+<pre class="alt"><span class="lnum">  15:  </span>        unitOfWork.Initialize();</pre>
+<pre><span class="lnum">  16:  </span>&#160;</pre>
+<pre class="alt"><span class="lnum">  17:  </span>        <span class="kwrd">return</span> <span class="kwrd">null</span>;</pre>
+<pre><span class="lnum">  18:  </span>    }</pre>
+<pre class="alt"><span class="lnum">  19:  </span>&#160;</pre>
+<pre><span class="lnum">  20:  </span>    <span class="kwrd">public</span> <span class="kwrd">void</span> BeforeSendReply(<span class="kwrd">ref</span> Message reply, <span class="kwrd">object</span> correlationState)</pre>
+<pre class="alt"><span class="lnum">  21:  </span>    {</pre>
+<pre><span class="lnum">  22:  </span>        var unitOfWork = container.GetInstance&lt;IUnitOfWork&gt;();</pre>
+<pre class="alt"><span class="lnum">  23:  </span>&#160;</pre>
+<pre><span class="lnum">  24:  </span>        Debug.WriteLine(<span class="str">&quot;After invoke&quot;</span>);</pre>
+<pre class="alt"><span class="lnum">  25:  </span>        unitOfWork.Commit();</pre>
+<pre><span class="lnum">  26:  </span>        unitOfWork.Dispose();</pre>
+<pre class="alt"><span class="lnum">  27:  </span>    }</pre>
+<pre><span class="lnum">  28:  </span>}</pre>
+<p></div>
+<p>As you can see we Initialize, Commit and Dispose the UoW for each “Message” going in and out of our service.</p>
+<p>Notes:</p>
+<ul> 
+<li>BeforeSend reply will still be invoked <a href="http://winterdom.com/weblog/CommentView,guid,140a3c2c-4850-41a4-9615-f63fa166ed78.aspx">even if the operation is “OneWay”.</a> </li>
+<li>As you can see we always commits, this works because the implementations of IUnitOfWork is required to always start a new transaction after commit and rollback. This is to allow user code to perform manual commits and rollback. This feature is also required to enable other errorhandlers to update application state if needed. (more on this below) </li>
+<p></ul>
+<p>Ok, so far so good. Lets look at the final piece of the puzzle. The rollback…</p>
+<h4>Rollback the UoW if the service call throws an exception</h4>
+<p>By now you’ll probably guess how this will be done:) WCF is extensible beyond belief. First we add some more code that allows us to autoregister WCF <a href="http://msdn.microsoft.com/en-us/library/system.servicemodel.dispatcher.ierrorhandler.aspx">Errorhandlers</a> through StructureMap.</p>
+<p><!-- code formatted by http://manoli.net/csharpformat/ --></p>
+<div class="csharpcode"> 
+<pre class="alt"><span class="lnum">   1:  </span><span class="kwrd">foreach</span> (var errorHandler <span class="kwrd">in</span> container.GetAllInstances&lt;IErrorHandler&gt;())</pre>
+<pre><span class="lnum">   2:  </span>{</pre>
+<pre class="alt"><span class="lnum">   3:  </span>    cd.ErrorHandlers.Add(errorHandler);</pre>
+<pre><span class="lnum">   4:  </span>}</pre>
+<p></div>
+<p>With this in place we can configure a custom “UnitOfWorkErrorHandler” that can perform the rollback in case of an exception. The fact that we are resolving the errorhandlers using StructureMap means that we can have the container itself injected into them if necessary. </p>
+<p><!-- code formatted by http://manoli.net/csharpformat/ --></p>
+<div class="csharpcode"> 
+<pre class="alt"><span class="lnum">   1:  </span><span class="kwrd">public</span> <span class="kwrd">class</span> UnitOfWorkErrorHandler : IErrorHandler</pre>
+<pre><span class="lnum">   2:  </span>{</pre>
+<pre class="alt"><span class="lnum">   3:  </span>    <span class="kwrd">private</span> <span class="kwrd">readonly</span> IContainer container;</pre>
+<pre><span class="lnum">   4:  </span>&#160;</pre>
+<pre class="alt"><span class="lnum">   5:  </span>&#160;</pre>
+<pre><span class="lnum">   6:  </span>    <span class="kwrd">public</span> UnitOfWorkErrorHandler(IContainer container)</pre>
+<pre class="alt"><span class="lnum">   7:  </span>    {</pre>
+<pre><span class="lnum">   8:  </span>        <span class="kwrd">this</span>.container = container;</pre>
+<pre class="alt"><span class="lnum">   9:  </span>    }</pre>
+<pre><span class="lnum">  10:  </span>&#160;</pre>
+<pre class="alt"><span class="lnum">  11:  </span>    <span class="kwrd">public</span> <span class="kwrd">void</span> ProvideFault(Exception error, MessageVersion version, <span class="kwrd">ref</span> Message fault)</pre>
+<pre><span class="lnum">  12:  </span>    {</pre>
+<pre class="alt"><span class="lnum">  13:  </span>        var uow = container.GetInstance&lt;IUnitOfWork&gt;();</pre>
+<pre><span class="lnum">  14:  </span>&#160;</pre>
+<pre class="alt"><span class="lnum">  15:  </span>        Debug.WriteLine(<span class="str">&quot;Rolling back UoW&quot;</span>);</pre>
+<pre><span class="lnum">  16:  </span>&#160;</pre>
+<pre class="alt"><span class="lnum">  17:  </span>        uow.Rollback();</pre>
+<pre><span class="lnum">  18:  </span>    }</pre>
+<pre class="alt"><span class="lnum">  19:  </span>&#160;</pre>
+<pre><span class="lnum">  20:  </span>    <span class="kwrd">public</span> <span class="kwrd">bool</span> HandleError(Exception error)</pre>
+<pre class="alt"><span class="lnum">  21:  </span>    {</pre>
+<pre><span class="lnum">  22:  </span>        <span class="kwrd">return</span> <span class="kwrd">false</span>;</pre>
+<pre class="alt"><span class="lnum">  23:  </span>    }</pre>
+<pre><span class="lnum">  24:  </span>}</pre>
+<p></div>
+<p>But why are you not injecting the IUnitOfWork directly? </p>
+<p>The reason for this is that there is no ongoing call when the error handler is instantiated so the cache wouldn't work (We are storing the cache in the active service instance remember). The workaround would be to add some kind of “lazy dependency” feature to StructureMap that would instantiate our UoW the first time it’s accessed. But until then will just use the container directly.</p>
+<p>The fact that a new transaction is started after rollback enables the other errorhandlers to perform custom business logic that requires an active transaction eg. logging to a database, publishing events to an service bus etc. ( remember that the&#160; “new UoW transaction” is going to be committed by the message inspector above)</p>
+<h4>Summary</h4>
+<p>Phew, we are finally done. WCF and StructureMap is really easy to extend. There is a lot of extensions required for this to work but I like the fact that each extensions does its thing and thereby adhering to <a href="http://en.wikipedia.org/wiki/Single_responsibility_principle">Single Responsibility Principle</a>. Having the infrastructure managing your UoW is a great way to keep your code clean and minimizes the risk of “forgetting” transaction management.</p>
+<p><strong>Resources</strong></p>
+<p>The code for the StructureMap WCF Integration can be found <a href="http://code.google.com/p/andreasohlund/source/browse/#svn/trunk/BlogPosts/StructureMapWCF">here</a>.</p>
+<p>A test that shows the configuration and usage of the UoW is <a href="http://code.google.com/p/andreasohlund/source/browse/trunk/BlogPosts/StructureMapWCF/UnitOfWork/WcfServiceTests.cs">here</a></p>
+<p>And the code for the WCF UoW is <a href="http://code.google.com/p/andreasohlund/source/browse/#svn/trunk/BlogPosts/StructureMapWCF/UnitOfWork/Behaviours">here</a></p>
+<p>Jimmy Bogard has written a <a href="http://www.lostechies.com/blogs/jimmy_bogard/archive/2008/09/16/integrating-structuremap-and-nhibernate-with-wcf.aspx">post</a> about this (but it turned out to have some threading problems but It got me stared down the right path)</p>
+<p>Donald Belcham at igloocoder.com has posted some <a href="http://www.igloocoder.com/archive/2009/04/23/wcf-and-nhibernate-redux.aspx">info</a> on the subject</p>
+<p>AltOxite has a <a href="http://code.google.com/p/fubumvc-contrib/source/browse/trunk/samples/AltOxite/AltOxite.Core/Persistence/NHibernateUnitOfWork.cs">great UoW implementation for Fluent NHibernate</a> that I have shamelessly copied :)</p>
+<p>As always comment, suggestions etc is most welcome!</p>

@@ -1,0 +1,40 @@
+---
+layout: post
+title: Don't assume message ordering
+date: 2012-01-18 15:45:43.000000000 +01:00
+categories:
+- EDA
+- Guidelines
+- Messaging
+- Queuing
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '544005314'
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>On my travels I often see people getting into trouble by assuming that messages will be processed in the same order as they are being sent. If the there was a list of fallacies for asynchronous messaging this one would be:</p>
+<blockquote><p>Messages will always be processed in order</p></blockquote>
+<p>The reason why this is not true mainly comes from the fallacy that the network is reliable. This turns out, often painfully, to not be true and usually leads us to use message queuing systems like MSMQ, RabbitMQ, ActiveMQ, etc.</p>
+<p><img class="alignright" title="Highway" src="assets/39a31f841718c80fc233cf73aa01_grande.jpg" alt="" width="468" height="351" />Queuing systems helps us mitigate the "network is reliable" fallacy by providing us with store and forward capabilities. This basically means that a sent message will be stored locally until the infrastructure can transfer the message safely to the recipient. To do all this in a performant and scalable way queuing systems usually won't supports ordered delivery since that drives the complexity up making the former hard to achieve. You can think of this like a multi lane highway, some cars will travel faster than others, due to size, speed,number of stops,etc. This leads to messages overtaking each other and there for reach their destination in random order. Even if they do arrive in order there can be multiple concurrent threads processing them which leads to even more rearrangement.</p>
+<h3>But every thing seems to run fine on my machine?</h3>
+<p>This is what make the whole thing so tricky. Systems under light load will most of the time process messages in order. This means that you will only see this happening when your system is under heavy load making it very hard to debug.</p>
+<h3>But I use one thread and have a queuing system that guarantees order?</h3>
+<p>Yes running in this mode will solve give you ordering at the infrastructure level. But unfortunately this is not enough. Communication frameworks like NServiceBus will manage exceptions for you by doing a few retries and  then moving the message to a error queue. This means that a message can be retried from the error queue days after it arrived to its original destination. While this is happening you don't want your entire system grind to a halt while that message is waiting for someone to issue a retry. This means that even though the infrastructure might support ordered delivery, messages can still be processed out of order at the application level.</p>
+<h3>So what should we do then?</h3>
+<p>There is unfortunately no silver bullet available that will solve all this for you. First of all you need to make sure that you never write code that assumes messages to arrive in a certain order, you can't even assume that they will arrive at all .This leads you to write explicit code to make sure that your application behaves consistently in these situations. This is a good thing!</p>
+<p>You can solve this in a few ways, some times the solution is to anchor the message in time so that the receiver can make correct decisions. Publishing price updates is a good example where having a ValidFrom - ValidTo will make processing order irrelevant. Another common way is to use <a href="http://nservicebus.com/Sagas.aspx">sagas </a>as a way to ensure that message ordering won't matter. I won't go into the details but if you're interested I've done a few talks on this subject:</p>
+<p><a href="http://andreasohlund.net/2011/03/12/notes-from-my-e-van-talk-on-sagas/">http://andreasohlund.net/2011/03/12/notes-from-my-e-van-talk-on-sagas/</a></p>
+<p><a href="http://skillsmatter.com/podcast/open-source-dot-net/reliable-integrations-nservicebus">http://skillsmatter.com/podcast/open-source-dot-net/reliable-integrations-nservicebus</a></p>
+<h3>In closing</h3>
+<p>Repeat after me: <strong><span style="text-decoration: underline;">Don't assume message ordering when building a message based system</span></strong></p>

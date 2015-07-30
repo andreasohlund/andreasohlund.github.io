@@ -1,0 +1,47 @@
+---
+layout: post
+title: Store and forward
+date: 2013-02-24 10:27:55.000000000 +01:00
+categories: []
+tags: []
+status: draft
+type: post
+published: false
+meta:
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>Store and forward is defined in the <a href="http://www.eaipatterns.com/Introduction.html">bible</a> as:</p>
+<blockquote><p>when the sending application sends the message to the message channel, the messaging system stores the message on the sender’s computer, either in memory or on disk</p></blockquote>
+<div>This essentially means components that makes use of S &amp; F can continue to operate as long as you have disk space left on your local server. The obvious benefit is the it helps us tackle the first fallacy of distributed computing, that the network is reliable. Ie no matter what bad things have happened with the server we're trying to communicate with we can still continue to operate. As with everything else S &amp; F is no silver bullet and the week spot is disk space. If you run out of it you are in trouble. Given the disk cost of today this is rarely an issue but you still need to keep that in the back of your head. On the programming side of things making use of S &amp; F means that you can make any assumptions on the state of the receiving end. While looks like a drawback at first I would argue that this pushes you to build better and more robust system that doesn't topple over when unexpected (bad)things happen in production</div>
+<p>http://iansrobinson.com/2009/04/27/temporal-and-behavioural-coupling/</p>
+<p>&nbsp;</p>
+<p>http://en.wikipedia.org/wiki/Store_and_forward</p>
+<p>&nbsp;</p>
+<p>Defines store and forward as</p>
+<p>This definition rules out many of the broker centric queueing systems out there. Since we all (hopefully) knows that store and forward is a good thing this seems to imply that all broker based queuing systems is bad?</p>
+<p>There store part of store and forward means that we store the message somewhere so that the receiver doesn't have to be online at the moment. The less stuff that needs to happen before the message is stored the better since the risk of failure is lower.</p>
+<p>lets call this server level store and forward - msmq (and the brokers that support federation)</p>
+<p>application level store and forward - the brokers</p>
+<p>different levels: msmq vs the rest</p>
+<p>local store and forward == if we have disk we're good</p>
+<p>msmq installs in federation by default but you can connect remotely to a queue and essentially make it behave like a broker</p>
+<div></div>
+<p>&nbsp;</p>
+<p>remote store and forward =&gt; more trick</p>
+<p>* fallacy of distributed computing</p>
+<p>if queing == needs HA</p>
+<p>http://www.rabbitmq.com/ha.html</p>
+<p>http://activemq.apache.org/ha.html</p>
+<p>&nbsp;</p>
+<p>or Federation</p>
+<p>http://www.rabbitmq.com/federation.html</p>
+<p>http://activemq.apache.org/how-do-distributed-queues-work.html</p>
+<p>the azure issue</p>

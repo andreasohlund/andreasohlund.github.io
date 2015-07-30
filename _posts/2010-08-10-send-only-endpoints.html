@@ -1,0 +1,26 @@
+---
+layout: post
+title: Send only endpoints
+date: 2010-08-10 21:24:00.000000000 +02:00
+categories:
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  blogger_blog: andreasohlund.blogspot.com
+  _edit_last: '1'
+  blogger_permalink: "/2010/08/send-only-endpoints.html"
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>Send only endpoints in <a href="http://www.nservicebus.com/">NServiceBus</a> is, well exactly what you would expect, endpoints that only sends outgoing messages. This type of endpoint is typically used when the only need is sending fire and forget messages to other endpoints. This means that you don’t have to configure and manage an input and error queues like you need with regular send/receive endpoints. A scenario where this is applicable might be web-frontends that only deal with collecting user input, e.g. order details, and sends them off as commands to backend servers for further processing. Just remember that by being send only you can not receive any return values/statuses from your commands.</p>
+<p>To configure your endpoint to be send only just leave out the whole MsmqTransport config section in your app.config.</p>
+<p>A working sample of a send only endpoint can be found <a href="http://github.com/andreasohlund/Blog/tree/master/SendOnlyEndpoint/">here</a>.</p>

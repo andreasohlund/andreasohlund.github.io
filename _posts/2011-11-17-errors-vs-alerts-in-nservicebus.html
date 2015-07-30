@@ -1,0 +1,35 @@
+---
+layout: post
+title: Errors vs Alerts in NServiceBus
+date: 2011-11-17 14:44:36.000000000 +01:00
+categories:
+- Errorhandling
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  dsq_thread_id: '475081304'
+  _edit_last: '1'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>Ayende has a <a href="http://ayende.com/blog/136194/make-a-distinction-errors-vs-alerts">good post on how you would manage exceptions in your production environment</a>. I've talked about how error management in a messaging world is a bit different in a <a href="http://andreasohlund.net/2010/03/15/errorhandling-in-a-message-oriented-world/">previous post</a> but I want to clarify how the things Ayende mentions in his post relates to messaging in general and NServiceBus in general. (the same would apply to MassTransit as well)</p>
+<p>So head over and read the post first:)</p>
+<p>Ok, lets start with this statement:</p>
+<blockquote><p>The interesting thing about that is that in both cases, production errors were handled in exactly the same way. They were ignored until a user called and complained about that</p></blockquote>
+<p>This could be true for NServiceBus as well but the fact that all errors ends up in a central error queue makes it a bit harder to ignore. I don't have an answer for this but I guess it's harder to explicitly purge an error queue as opposed to ignore an email or wading through gigs of production logfiles. Most of my customers have process that feeds of the error queue to do alerts, automatic retries,etc, more on this later.</p>
+<blockquote><p>The major problem is that errors happen <em>all the time</em>. In the vast majority of cases, you don’t really care, and it will fix itself automatically. For example, a error such as Transaction Deadlock Exception might happen a few times a day</p></blockquote>
+<p>This type of error are transient, meaning that they can be resolved with a retry,<a href="http://blog.sqlauthority.com/2007/05/16/sql-server-fix-error-1205-transaction-process-id-was-deadlocked-on-resources-with-another-process-and-has-been-chosen-as-the-deadlock-victim-rerun-the-transaction/"> heck SQL Server is telling that to our face</a> with the classic:</p>
+<blockquote><p>Error 1205 : Transaction (Process ID) was deadlocked on resources with another process and has been chosen as the deadlock victim. Rerun the transaction</p></blockquote>
+<p>NServiceBus will handle this automatically for you by doing a configurable number of retries. This ensures that transient errors like deadlocks usually don't end up in the error queue.</p>
+<blockquote><p>That is a major difference between Errors and Alerts. An error is just an exception or a problem that happened in production. Usually, those aren’t really important. It will sort itself out... <em>you don’t care</em></p></blockquote>
+<p>When it comes down to deciding which errors that should lead to alerts you're pretty much on your own. NServiceBus will make sure that every message that fails processing will end up in a error queue somewhere. Then it's up to you to decide if you're going to do a retry in 1 hour , create a bug report OR wake up the admin in the middle of the night to get the database running again. Technically you would just create a regular NServiceBus endpoint that feeds off the error queue and make decisions based on your specific business requirement.</p>
+<p>I know that there are a open source effort to create a generic error management solution for NServiceBus that would cover the basic use cases so expect some more info soon.</p>

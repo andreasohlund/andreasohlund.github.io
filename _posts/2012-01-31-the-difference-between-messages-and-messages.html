@@ -1,0 +1,34 @@
+---
+layout: post
+title: The difference between messages and messages
+date: 2012-01-31 08:00:07.000000000 +01:00
+categories:
+- Basics
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '558644841'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>Ok that was a confusing title:)</p>
+<p>In NServiceBus we have 2 different types of messages and that usually confuses people. So lets take a look at the different types, what they should be used for and who should use them.</p>
+<h3>The applicative message</h3>
+<p>This is the type of message that most users think of when we talk about messages. This is the <a href="http://eaipatterns.com/Message.html">message that you as a users of the framework will define in order to send data from a client to a server</a>. In NServiceBus this is either a C# class or interface inheriting from the IMessage marker interface and in 3.0 possibly <a href="http://nservicebus.com/UnobtrusiveMode.aspx">defined by a convention instead</a>. This is the message that you own version and control. Let's call it a "message" going forwards. To send this message over the wire we need to serialize it to any of the supported formats, json, xml, protobuf etc. The serialized data is wrapped in an envelope that can be given the messaging system for store and forward transmission to its final destination. We call this a TransportMessage. You can send multiple of your applicative messages in the same go making them part of the same TransportMessage using the Bus.Send(object[] messages) signature.</p>
+<h3>Transport messages, the workhorse of NServiceBus</h3>
+<p>This is the other of the message types and is owned, controlled and versioned by NServiceBus. If you have read the EAI patterns book this would roughly translate to a <a href="http://eaipatterns.com/EnvelopeWrapper.html">envelope wrapper</a>. Other frameworks like Lokad.Cqrs just call them envelopes. The main purpose of this type of message is to carry the serialized payload across the wire but they also contains headers and infrastructure related information such as return address, time sent, id etc. TransportMessages is the physical unit that gets sent between a client and a server so If you look at messages in input queues, error or audit queues etc. it's this kind of message you would see.</p>
+<h3>Transport messages forms the unit of work</h3>
+<p>It's very important to understand that the unit of work when it comes to message processing is the Transport Message (TM). When NServiceBus picks up a TM from the input queue a transaction is created and all message handlers for the contained messages (remember it could be more than one) will execute in this transaction. If no exception is thrown the transaction will commit and the message will be removed. If any handler throws an error NServiceBus will retry a configurable number of time and then send the entire TM to the configured error queue. Most of the time messages will relate 1-1 to TM's but you can use this feature if you want messages to be processed a whole inside a single transaction.</p>
+<h3>Can there be empty transport messages?</h3>
+<p>You as a user can't send transport messages without contained messages but NServiceBus sends empty transport messages internally to control things like subscriptions, worker registration for the distributor etc. We call this special type if message a "ControlMessage" and they only contain headers.</p>
+<p>Hopefully this post has shed some light when it comes to the different types of messages used in the NServiceBus lingo.</p>

@@ -1,0 +1,35 @@
+---
+layout: post
+title: Advanced pipeline management using message mutators
+date: 2012-02-01 08:00:29.000000000 +01:00
+categories:
+- In depth
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '559895934'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>The message pipeline in NServiceBus 2.X pretty much consisted of what we called message modules. They served their purpose but didn't quite give you the full control over the message pipeline needed to do more advanced things. Another major shortcoming was that there was no way to hook into the pipeline at the sending/client side of the message conversation. When introducing the DataBus feature of NServiceBus 3.0 we came up with the notion of message mutators to solve a specific requirement to change the content of a message before and after sending it on the wire. The message mutators turned out to be a nice addition to our pipeline both in terms of their ability to change message content but also to serve as more fine grained hooks into the pipeline.</p>
+<p>Lets take a look at how to use them!</p>
+<h3>2 Flavours of mutators</h3>
+<p>We have 2 types of message mutators, one that operates on the <a href=" http://andreasohlund.net/2012/01/31/the-difference…s-and-messages">applicative messages</a> and another one that operates on the <a href=" http://andreasohlund.net/2012/01/31/the-difference…s-and-messages">physical transport messages</a>. Message mutators is used to change/react to individual messages being send or received. The <a href="https://github.com/NServiceBus/NServiceBus/blob/master/src/messagemutator/NServiceBus.MessageMutator/IMessageMutator.cs">IMessageMutator</a> interface lets you implement hooks for both the sending side and the receiving side. If you only need one or the other you can implement one of the more fine grained <a href="https://github.com/NServiceBus/NServiceBus/blob/master/src/messagemutator/NServiceBus.MessageMutator/IMessageMutator.cs">IMutateOutgoingMessages </a>or <a href="https://github.com/NServiceBus/NServiceBus/blob/master/src/messagemutator/NServiceBus.MessageMutator/IMessageMutator.cs">IMutateIncomingMessages</a>. Reacting to individual messages can be used to perform things like validation of outgoing/incoming messages. A sample of this using data annotations to validate messages can be found in the <a href="https://github.com/NServiceBus/NServiceBus/tree/master/Samples/MessageMutators">MessageMutator sample</a> included in the <a href="http://nservicebus.com/Downloads.aspx">NServiceBus download</a>. We use this type of mutator internally to do things like property encryption and serialization/de serialization of properties to and from the DataBus. The other type of mutator, Transport message mutators, are created by implementing the <a href="https://github.com/NServiceBus/NServiceBus/blob/master/src/messagemutator/NServiceBus.MessageMutator/IMutateTransportMessages.cs">IMutateTransportMessages </a>interface. As mentioned earlier this type of mutator works on the entire transport message and is useful for things like <a href="https://github.com/NServiceBus/NServiceBus/blob/master/Samples/MessageMutators/MessageMutator/TransportMessageCompressionMutator.cs">compression</a>, header manipulation etc.</p>
+<p>A full explanation of the syntax used can be found <a href="http://nservicebus.com/docs/Samples/MessageMutatorsSample.aspx">here</a>. Remember that message mutators are <span style="text-decoration: underline;">NOT</span> automatically registered in the container so in order for them to be invoked you need to register them in the container your self.</p>
+<h3>When should I use a message mutator?</h3>
+<p>Just like the recommendation for  headers,  message mutators should only be used for infrastructure purposes. So as a rule of thumb only consider using message mutators so solve technical requirements.</p>
+<h3>What happens if a mutator throws an exception?</h3>
+<p>If a server side (incoming) mutator throws a exception the message will be aborted, rolled back to the queue and retried. If a client side (outgoing) message mutator throws the exception will bubble up to the method calling bus.Send|Publish.</p>
+<h3>In closing</h3>
+<p>Hopefully this helped you understand what the message mutators are and how you can use the to bend the NServiceBus pipeline to your will.</p>
+<p>&nbsp;</p>

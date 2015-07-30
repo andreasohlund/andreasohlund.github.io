@@ -1,0 +1,66 @@
+---
+layout: post
+title: Introduction to the NServiceBus gateway
+date: 2011-12-01 12:57:19.000000000 +01:00
+categories:
+- Gateway
+- NServiceBus
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '489624926'
+author:
+  login: andreas.ohlund
+  email: andreasohlund2@gmail.com
+  display_name: Andreas Öhlund
+  first_name: Andreas
+  last_name: "Öhlund"
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p>This post will, hopefully, give you a high level overview of what the NServiceBus gateway is, where to use it and perhaps more importantly where to not use it.</p>
+<p>The main purpose of the gateway is to allow you to do the same durable fire and forget messaging that NServiceBus has got you used to across <span style="text-decoration: underline;">physically separated sites</span>, by sites i mean locations where you run IT infrastructure and not web sites. The gateway only comes into play where you can't use  the regular queued transports for communication i.e. when setting up a VPN-connection is not an option. The reason for not using a VPN is usually security concerns, bandwidth limitation, latency problems, high availability constraints etc.</p>
+<h2>When to not use the Gateway</h2>
+<p>The gateway should not be used when the reason for running separated sites is disaster recovery. Under those circumstances all your sites are exact replicas and is <span style="text-decoration: underline;">not</span> logically different from each other. In this scenario you're much better off using what ever support your infrastructure has to keep your sites in sync. Examples here are are SAN snapshots, SQL server log shipping, RavenDB replication etc.</p>
+<p>So if your sites aren't logically different then choose another technique to keep your sites in sync.</p>
+<h2>Ok, but what do you mean by logically different?</h2>
+<p>When I talk about logically different I mean sites that serve a different business purpose, ie differs in behavior from other sites. Imagine a chain of retail stores where you would have a headquarter that is keeping the prices for the different goods you're selling. Those prices need to be available to all your stores in a highly available manner. Not being able to do business if the link to the HQ is down is bad for sales , trust me!</p>
+<p>If we look at this scenario from a logical view we see that all the communication goes on withing the same business service (BS), pricing in this case. In terms of behavior the different physical sites are having different logical behavior. This is a sure sign that the gateway might come in handy. Lets dig a bit deeper and look at that actual responsibilities of each site.</p>
+<ul>
+<li><strong>Headquarter</strong> - Maintains the prices and pushes any price change out to the different stores on a daily basis</li>
+<li><strong>Store</strong> - Stores the prices locally for read only purposes</li>
+</ul>
+<p>Prices are usually set for a least a day at a time so it's good enough for the HQ to push them to the sites once per day, lets model this as a <em>DailyPriceUpdates</em> message containing the list of price updates for the coming business day. Given this design we only need to get one message across to each site per day which lowers the requirement for the infrastructure used. Internally in HQ other business services may need more frequent updates so we model this with another <span style="text-decoration: underline;">logically different message</span>, <em>PriceUpdatedForProduct </em>that will allow us to use the pub/sub pattern while communicating with other BS. The gateway doesn't support pub/sub, more on that later, but this isn't a problem since request/response is perfectly fine <span style="text-decoration: underline;">within</span> a BS and remember those sites are physically different but the communication is done within the same logical BS. So when you use the gateway the guideline is to model the messages going across sites explicitly. If we extend the sample to include a sales service responsible for reporting the sales statistics so that the pricing service can set appropriate prices we end up with the folowing picture: (from NServiceBus.com)</p>
+<p><img class="alignnone" src="assets/store_to_headquarters_pricing_and_sales.png" alt="" width="600" height="271" /></p>
+<p>As you can see the prices gets pushed daily to the stores and sales reports are pushed daily to the HQ. Any pub/sub needed goes on within the same <span style="text-decoration: underline;">physical site</span> and this is the reason that the NServiceBus gateway doesn't support pub/sub across sites since it shouldn't be needed in a well designed system. Going across sites usually means radically different transport characteristics like latency, bandwidth, reliability and explicit messages for the gateway communication is helping to make it more obvious for developers that they are about to make cross site calls. This is where Remote Procedure Call (RPC) starts to really break down. RPC completely hides the fact that you're now going out of your data center and will meet all the fallacies of distributed computing head on.</p>
+<h2>Using the gateway</h2>
+<p>The gateway in NServiceBus 3.0 is included in the core assembly and that means that every endpoint is capable to running a gateway. The gateway can easily be turned on by calling <em>Configure.Gateway()</em>. To send messages we've added a new method the IBus interface called SendToSites</p>
+<p>[gist id=1415466 ]</p>
+<p>As you can see this allows you to pass in a list of sites to where you want to send your messages. Each site can be configured to use a different transport mechanism. Currently the supported channels are http/https  but you could easily extend the gateway with your own implementation.</p>
+<p>On the receiving side there will be another gateway listening on the input channel and forward the incoming message to the target endpoint. The image below shows the physical parts involved</p>
+<p><a href="http://andreasohlund.net/wp-content/uploads/2011/12/New-and-shiny-things-in-NServiceBus-3.0-e1322740232426.png"><img class="alignnone size-full wp-image-264" title="Physical view" src="assets/New-and-shiny-things-in-NServiceBus-3.0-e1322740232426.png" alt="" width="820" height="547" /></a></p>
+<p>As you can see there is a gateway running inside of each host process. The gateway gets its input from a regular MSMQ queue and forwards the message over the desired channel, HTTP in this case, to the receiving gateway. The receiving side deduplicates the message and forwards it to the main input queue of its local endpoint.</p>
+<p>I'm going into the nitty gritty details of the gateway in a follow up post but in short the gateway has the following features:</p>
+<ul>
+<li>Automatic retries</li>
+<li>Deduplication of messages</li>
+<li>Transport level encryption with SSL</li>
+<li>Support for data bus properties with large payloads</li>
+<li>Can listen on multiple channels of different types</li>
+<li>Included in every endpoint</li>
+<li>Easily extensible with other channels</li>
+</ul>
+<div><span class="Apple-style-span" style="font-size: 20px; font-weight: bold;">In closing</span></div>
+<p>Hopefully this post gave you a better insight into where the gateway can help you out and where other tools are more appropriate.</p>
+<div>If you want to take the gateway for a spin please take a look at the <a href="https://github.com/NServiceBus/NServiceBus/tree/master/Samples/Gateway">gateway sample</a>.</div>
+<p>Key thing to take away</p>
+<ul>
+<li>Only use the gateway for logically significant sites</li>
+<li>Use explicit messages for your cross site communication</li>
+<li>The gateway doesn't support pub/sub</li>
+<li>Automatic deduplication and retries comes out of the box</li>
+</ul>
+<div>Until next time!</div>
