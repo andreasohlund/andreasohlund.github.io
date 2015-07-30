@@ -100,7 +100,7 @@ author:
 </table>
 <p>As you can see the installers are controlled by both the /install command line option to the host and the current profile used. You can of course implement your own profile if you have other requirements.</p>
 <p>When self hosting NServiceBus you have to invoke the installers manually using:</p>
-<p>[gist id=1681872]</p>
+<p>{% gist 1681872 %}</p>
 <p>A full example can be found <a href="https://github.com/NServiceBus/NServiceBus/blob/master/Samples/AsyncPages/WebApplication1/Global.asax.cs">here</a>.</p>
 <p>Finally there is one final way to run the infrastructure installers. If you invoke the host with the /installInfrastructure flag the host will run only the infrastructure installers for you without requiring you to configure anything. This can be useful when you setup a new server or a developer machine since that verifies and installs the required infrastructure for NServiceBus to run. The RunMeFirst.bat included in the download is doing just that.</p>
 <p>&nbsp;</p>

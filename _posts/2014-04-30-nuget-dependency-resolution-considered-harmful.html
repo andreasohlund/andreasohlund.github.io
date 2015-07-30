@@ -31,7 +31,7 @@ author:
 <p><em><strong>install-package -DependencyVersion HighestMinor  {package name}</strong></em></p>
 <p>For a complete list of strategies please refer to the <a href="https://docs.nuget.org/docs/reference/package-manager-console-powershell-reference#Install-Package">official doco</a>.</p>
 <p>You can take this one step further and make it the default strategy by putting the following in you <a href="https://docs.nuget.org/docs/reference/nuget-config-file">machine wide nuget.config</a>:</p>
-<p>[gist id=ef46da18e681de2c31b5]</p>
+<p>{% gist ef46da18e681de2c31b5 %}</p>
 <h2>In closing</h2>
 <p>While I can see that the NuGet team want to take the safest approach and until SemVer has become the standard perhaps that's the right thing to do. My proposal would be to add an extra qualifier to the dependency to declare if the dependency is following SemVer or not. That could then cause NuGet to switch to the HighestMinor strategy which by definition is safe for SemVer compliant projects given that you specify a [{CurrentMajor}, {NextMajor}) which can be setup as the default if you use <a href="http://darthfubumvc.github.io/ripple/features/creatingpackages/">Ripple to generate your NuSpecs</a>.</p>
 <p><em><strong>&lt;dependency id="ExamplePackage" version="[1.0.0, 2.0.0)" strategy="SemVer" /&gt;</strong></em></p>

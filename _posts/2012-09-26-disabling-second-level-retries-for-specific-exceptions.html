@@ -52,6 +52,6 @@ author:
 <li>NServiceBus.ExceptionInfo.HelpLink</li>
 </ul>
 <p>So to create a custom policy that supresses SLR if the exception type is of the type MyBusinessException the only thing you have to do is this:</p>
-<p>[gist id=3781308]</p>
+<p>{% gist 3781308 %}</p>
 <p>As you can see we just look at the headers and return TimeSpan.MinValue to abort the SLR. If you have other requirements just modify the policy to look at any of the other headers listed above.</p>
 <p>Hope this helps!</p>

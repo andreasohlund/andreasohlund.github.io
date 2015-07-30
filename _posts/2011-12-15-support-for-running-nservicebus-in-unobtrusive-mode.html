@@ -30,7 +30,7 @@ author:
 <h2>Unobtrusive mode</h2>
 <p>This new feature in NServiceBus 3.0 allows you to pass in your own conventions to determine which types are message definitions instead of using the <em>IMessage</em> interface.</p>
 <p>Below is a snippet that shows how to define those conventions:</p>
-<p>[gist id=1482280 ]</p>
+<p>{% gist 1482280  %}</p>
 <p>The code above tells NServiceBus to treat all interfaces/classes with a namespace that ends with "Messages" as messages. As you see you can also specify conventions for the new <a href="http://andreasohlund.net/2011/12/08/introducing-ievent-and-icommand/">ICommand and IEvent feature</a> as well.</p>
 <p>NServiceBus supports property level encryption by using a special <em>WireEncryptedString</em> property and the last line in the snippet is the unobtrusive way to accomplish that encryption.</p>
 <p>That is pretty much all there is to it.</p>
