@@ -9,4 +9,8 @@ github_username:  andreasohlund
 permalink:    /:year/:month/:day/:title/
 
 # Build settings
-markdown: kramdown
+markdown: redcarpet
+markdown_ext:  markdown,mkdown,mkdn,mkd,md
+
+redcarpet:
+  extensions: ["tables", "autolink", "strikethrough", "space_after_headers", "with_toc_data", "fenced_code_blocks"]
